@@ -1,0 +1,2 @@
+### Animation for the Final Scene (5? pts)
+We encourage you to create an animation for your final scene. The simplest way to do this is to render multiple frames with different camera positions or object transformations, and then combine them into a video using tools like `ffmpeg`. You may create more complex animations using keyframes or physics simulations. Another way is to create animations in software like Blender, export .obj sequences, and render them with your ray tracer.

@@ -1,0 +1,2 @@
+### Support for Model Loading (5 pts)
+To take full advantage of existing 3D models, we strongly recommend you to support 3D model file loading, e.g. `.obj` file. You may use existing libraries like `tobj`. For materials, see [rendering](rendering-bonus.md) for more details.
