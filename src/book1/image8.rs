@@ -11,12 +11,16 @@ use crate::tools::sphere::Sphere;
 use crate::tools::vector3::{Point3, Vec3, ramdom_on_hemisphere, unit_vector};
 use image::{ImageBuffer, RgbImage};
 
-fn ray_color(r: &Ray, world: &dyn Hittable) -> Vec3 {
+fn ray_color(r: &Ray, depth : u32, world: &dyn Hittable) -> Vec3 {
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+
     let mut rec: HitRecord = HitRecord::default();
 
     if world.hit(r, 0.0, INFINITY, &mut rec) {
         let direction = ramdom_on_hemisphere(rec.normal);
-        return 0.5 * ray_color(&Ray::new(rec.p, direction), world);
+        return 0.5 * ray_color(&Ray::new(rec.p, direction), depth - 1, world);
     }
 
     let unit_direction = unit_vector(r.direction());
@@ -33,7 +37,8 @@ pub fn render() {
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
-    let cam: Camera = Camera::new(16.0 / 9.0, 400, 100);
+    let mut cam: Camera = Camera::new(16.0 / 9.0, 400, 100);
+    cam.max_depth = 50;
     let image_width = cam.image_width;
     let image_height = cam.image_height();
     let pixel_samples_scale = cam.pixel_samples_scale();
@@ -49,7 +54,7 @@ pub fn render() {
             let mut pixel_color: Color = Color::zero();
             for _sample in 0..cam.samples_per_pixel {
                 let r = cam.get_ray(i, j);
-                pixel_color += ray_color(&r, &world);
+                pixel_color += ray_color(&r, cam.max_depth, &world);
             }
             let pixel = img.get_pixel_mut(i, j);
             Color::write_color(pixel_color * pixel_samples_scale, pixel);
