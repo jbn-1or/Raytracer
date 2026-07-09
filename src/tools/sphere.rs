@@ -5,11 +5,13 @@ use crate::tools::ray::Ray;
 use crate::tools::vector3::{Point3, dot};
 
 pub struct Sphere {
-    center: Point3,
-    radius: f64,
+    center: Point3, // 球心坐标
+    radius: f64,    // 球体半径
 }
 
 impl Sphere {
+    /// 创建一个球体，若半径为负数则自动钳位为 0
+    /// # 参数`center`-球心坐标 `radius`-球体半径
     pub fn new(center: Point3, radius: f64) -> Self {
         let mut r = radius;
         if radius < 0.0 {
@@ -20,6 +22,8 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
+    /// 检测光线是否与球体相交，若相交则更新 HitRecord
+    /// # 参数`r`-入射光线 `ray_tmin（max）`-光线参数 t 的最小（大）阈值 `rec`-储存HitRecord
     fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
         let oc = self.center - r.origin();
         let a = r.direction().length_squared();

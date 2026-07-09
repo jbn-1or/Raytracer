@@ -61,11 +61,11 @@ pub fn render() {
             let pixel_center =
                 pixel00_loc + (i as f64 * pixel_delta_u) + (j as f64 * pixel_delta_v);
             let ray_direction = pixel_center - camera_center;
-            let r = Ray::new(&camera_center, &ray_direction);
+            let r = Ray::new(camera_center, ray_direction);
 
             let pixel_color = ray_color(&r.direction());
             let pixel = img.get_pixel_mut(i, j);
-            Color::write_color(&pixel_color, pixel);
+            Color::write_color(pixel_color, pixel);
         }
     }
 

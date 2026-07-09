@@ -3,3 +3,4 @@ pub mod image2;
 pub mod image3;
 pub mod image4;
 pub mod image5;
+pub mod image6;
