@@ -15,7 +15,7 @@ pub struct Camera {
     /// 每像素发射多条光线并对颜色取平均
     pub samples_per_pixel: u32,
     /// 光线反射的最大次数
-    pub max_depth : u32,
+    pub max_depth: u32,
 
     /// 渲染图像高度
     image_height: u32,
@@ -38,7 +38,7 @@ impl Camera {
             aspect_ratio,
             image_width,
             samples_per_pixel,
-            max_depth : 10,
+            max_depth: 10,
             image_height: 0,
             pixel_samples_scale: 0.0,
             center: Point3::zero(),

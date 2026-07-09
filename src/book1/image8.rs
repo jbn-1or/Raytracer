@@ -11,8 +11,8 @@ use crate::tools::sphere::Sphere;
 use crate::tools::vector3::{Point3, Vec3, ramdom_on_hemisphere, unit_vector};
 use image::{ImageBuffer, RgbImage};
 
-fn ray_color(r: &Ray, depth : u32, world: &dyn Hittable) -> Vec3 {
-    if depth <= 0 {
+fn ray_color(r: &Ray, depth: u32, world: &dyn Hittable) -> Vec3 {
+    if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
