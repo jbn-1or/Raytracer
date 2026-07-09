@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use console::style; // 用于在终端输出带样式的（彩色）文字
 use image::{ImageBuffer, RgbImage};
 // ImageBuffer: 通用图像缓冲区；RgbImage: ImageBuffer<Rgb<u8>, Vec<u8>> 的类型别名

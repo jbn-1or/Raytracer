@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::tools::color::Color;
 use crate::tools::ray::Ray;
 use crate::tools::vector3::{Point3, Vec3, dot, unit_vector};

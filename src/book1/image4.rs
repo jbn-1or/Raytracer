@@ -2,20 +2,40 @@
 
 use crate::tools::color::Color;
 use crate::tools::ray::Ray;
-use crate::tools::vector3::{Point3, Vec3, unit_vector};
+use crate::tools::vector3::{Point3, Vec3, dot, unit_vector};
 use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
-fn ray_color(r: &Color) -> Vec3 {
-    let unit_direction = unit_vector(*r);
+fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
+    let oc = center - r.origin();
+    let a = dot(r.direction(), r.direction());
+    let b = -2.0 * dot(r.direction(), oc);
+    let c = dot(oc, oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-b - discriminant.sqrt()) / (2.0 * a)
+    }
+}
+
+fn ray_color(r: &Ray) -> Vec3 {
+    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
+    if t > 0.0 {
+        let n = unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
+        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+    }
+
+    let unit_direction = unit_vector(r.direction());
     let a = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 }
 
 pub fn render() {
     // 设定路径
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("output/book1/image2.png");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("output/book1/image4.png");
 
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
@@ -63,7 +83,7 @@ pub fn render() {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(&camera_center, &ray_direction);
 
-            let pixel_color = ray_color(&r.direction());
+            let pixel_color = ray_color(&r);
             let pixel = img.get_pixel_mut(i, j);
             Color::write_color(&pixel_color, pixel);
         }
