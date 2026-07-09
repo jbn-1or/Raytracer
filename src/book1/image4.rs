@@ -2,10 +2,9 @@
 
 use crate::tools::color::Color;
 use crate::tools::ray::Ray;
+use crate::tools::render_utils::{create_progress_bar, prepare_output_path, save_image};
 use crate::tools::vector3::{Point3, Vec3, dot, unit_vector};
-use console::style;
 use image::{ImageBuffer, RgbImage};
-use indicatif::ProgressBar;
 
 fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     let oc = center - r.origin();
@@ -34,11 +33,7 @@ fn ray_color(r: &Ray) -> Vec3 {
 }
 
 pub fn render() {
-    // 设定路径
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("output/book1/image4.png");
-
-    let prefix = path.parent().unwrap();
-    std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
+    let path = prepare_output_path("output/book1/image4.png");
 
     // 设定照片视口尺寸
     let aspect_ratio = 16.0 / 9.0;
@@ -69,11 +64,7 @@ pub fn render() {
     // 产生新图片
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
-    let progress = if option_env!("CI").unwrap_or_default() == "true" {
-        ProgressBar::hidden()
-    } else {
-        ProgressBar::new((image_height * image_width) as u64)
-    };
+    let progress = create_progress_bar((image_height * image_width) as u64);
 
     // 渲染图片
     for j in 0..image_height {
@@ -86,14 +77,11 @@ pub fn render() {
             let pixel_color = ray_color(&r);
             let pixel = img.get_pixel_mut(i, j);
             Color::write_color(pixel_color, pixel);
+            progress.inc(1);
         }
     }
 
     progress.finish();
 
-    println!(
-        "Output image as \"{}\"",
-        style(path.to_str().unwrap()).yellow()
-    );
-    img.save(path).expect("Cannot save the image to the file");
+    save_image(&img, &path);
 }

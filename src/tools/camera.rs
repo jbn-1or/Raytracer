@@ -1,18 +1,12 @@
 #![allow(dead_code)]
 
-use std::path::Path;
-
-use console::style;
-use image::{ImageBuffer, RgbImage};
-use indicatif::ProgressBar;
-
-use super::color::Color;
-use super::hittable::{HitRecord, Hittable};
 use super::ray::Ray;
-use super::rtweekend::{INFINITY, random_double};
-use super::vector3::{Point3, Vec3, unit_vector};
+use super::rtweekend::random_double;
+use super::vector3::{Point3, Vec3};
 
-/// 相机类，负责构造并向场景分发光线，并利用光线结果构建渲染图像
+/// 相机类，负责构造并向场景分发光线。
+/// Camera 的职责是纯粹的"光线工厂"——给定像素坐标，生成对应的光线。
+/// 渲染循环、着色逻辑由各个场景文件自行管理。
 pub struct Camera {
     /// 图像宽高比
     pub aspect_ratio: f64,
@@ -36,59 +30,30 @@ pub struct Camera {
 }
 
 impl Camera {
-    /// 创建一个使用默认参数的相机
-    pub fn new() -> Self {
-        Self {
-            aspect_ratio: 1.0,
-            image_width: 100,
-            samples_per_pixel: 10,
+    /// 创建并初始化一个相机
+    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32) -> Self {
+        let mut cam = Self {
+            aspect_ratio,
+            image_width,
+            samples_per_pixel,
             image_height: 0,
-            pixel_samples_scale: 0.1,
+            pixel_samples_scale: 0.0,
             center: Point3::zero(),
             pixel00_loc: Point3::zero(),
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
-        }
+        };
+        cam.initialize();
+        cam
     }
 
-    /// 渲染场景并将结果保存为 PNG 图像
-    /// # 参数
-    /// - `world`-可击中物体列表的 trait 引用
-    /// - `path`-输出 PNG 文件的路径
-    pub fn render<P: AsRef<Path>>(&mut self, world: &dyn Hittable, path: P) {
-        self.initialize();
+    // ── getter
+    pub fn image_height(&self) -> u32 {
+        self.image_height
+    }
 
-        let prefix = path.as_ref().parent().unwrap();
-        std::fs::create_dir_all(prefix).expect("Cannot create output directory");
-
-        let mut img: RgbImage = ImageBuffer::new(self.image_width, self.image_height);
-
-        let progress = if option_env!("CI").unwrap_or_default() == "true" {
-            ProgressBar::hidden()
-        } else {
-            ProgressBar::new((self.image_height * self.image_width) as u64)
-        };
-
-        for j in 0..self.image_height {
-            for i in 0..self.image_width {
-                let mut pixel_color: Color = Color::zero();
-                for _sample in 0..self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, world);
-                }
-                let pixel = img.get_pixel_mut(i, j);
-                Color::write_color(pixel_color * self.pixel_samples_scale, pixel);
-                progress.inc(1);
-            }
-        }
-
-        progress.finish();
-
-        println!(
-            "Output image as \"{}\"",
-            style(path.as_ref().to_str().unwrap()).yellow()
-        );
-        img.save(path).expect("Cannot save the image to the file");
+    pub fn pixel_samples_scale(&self) -> f64 {
+        self.pixel_samples_scale
     }
 
     /// 初始化相机参数：计算图像高度、视口尺寸、像素偏移等
@@ -121,9 +86,13 @@ impl Camera {
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
+    // ── 光线生成 ─────────────────────────────────────────────
+
     /// 构造从相机中心射向像素 (i, j) 的光线
-    /// # 参数 `i`-像素的列索引（水平方向）`j`-像素的行索引（垂直方向）
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
+    /// # 参数
+    /// - `i`-像素的列索引（水平方向）
+    /// - `j`-像素的行索引（垂直方向）
+    pub fn get_ray(&self, i: u32, j: u32) -> Ray {
         let offset = self.sample_square();
         let pixel_center = self.pixel00_loc
             + ((i as f64 + offset.x()) * self.pixel_delta_u)
@@ -132,28 +101,14 @@ impl Camera {
         Ray::new(self.center, ray_direction)
     }
 
-    // 返回一个x, y分量随机的Vec3(关于0对称)
+    /// 返回一个 x, y 分量随机的 Vec3（关于 0 对称）
     fn sample_square(&self) -> Vec3 {
         Vec3::new(random_double() - 0.5, random_double() - 0.5, 0.0)
-    }
-
-    /// 计算光线在场景中传播后的颜色值
-    /// # 参数 `r`-入射光线 `world`-可击中物体列表的 trait 引用
-    fn ray_color(&self, r: &Ray, world: &dyn Hittable) -> Color {
-        let mut rec: HitRecord = HitRecord::default();
-
-        if world.hit(r, 0.0, INFINITY, &mut rec) {
-            return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
-        }
-
-        let unit_direction = unit_vector(r.direction());
-        let a = 0.5 * (unit_direction.y() + 1.0);
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 }
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new()
+        Self::new(1.0, 100, 10)
     }
 }

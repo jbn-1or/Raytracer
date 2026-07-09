@@ -3,6 +3,8 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
+use crate::tools::rtweekend::{random_double, random_double_range};
+
 /// 三维向量，底层存储为 [f64; 3]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -48,6 +50,20 @@ impl Vec3 {
     /// 计算向量模长的平方（避免了开方运算）
     pub fn length_squared(&self) -> f64 {
         self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
+    }
+
+    /// 生成三个分量均为随机的向量，[0,1)
+    fn random() -> Vec3 {
+        Vec3::new(random_double(), random_double(), random_double())
+    }
+
+    /// 生成三个分量均在指定范围内随机的向量
+    fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3::new(
+            random_double_range(min, max),
+            random_double_range(min, max),
+            random_double_range(min, max),
+        )
     }
 }
 
@@ -200,4 +216,25 @@ pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
 /// # 参数`v`-输入向量
 pub fn unit_vector(v: Vec3) -> Vec3 {
     v / v.length()
+}
+
+/// 生成随机单位向量
+pub fn random_unit_vector() -> Vec3 {
+    loop {
+        let p = Vec3::random_range(-1.0, 1.0);
+        let lensq: f64 = p.length_squared();
+        if lensq <= 1.0 && lensq > 1e-160 {
+            return p / lensq.sqrt();
+        }
+    }
+}
+
+/// 使生成的随机单位向量在正确的半球上（与给定法向内积为正）
+pub fn ramdom_on_hemisphere(normal: Vec3) -> Vec3 {
+    let on_unit_sphere = random_unit_vector();
+    if dot(on_unit_sphere, normal) > 0.0 {
+        on_unit_sphere
+    } else {
+        -on_unit_sphere
+    }
 }
