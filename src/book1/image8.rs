@@ -29,7 +29,7 @@ fn ray_color(r: &Ray, depth : u32, world: &dyn Hittable) -> Vec3 {
 }
 
 pub fn render() {
-    let path = prepare_output_path("output/book1/image7.png");
+    let path = prepare_output_path("output/book1/image8.png");
 
     // World
     let mut world: HittableList = HittableList::new();
