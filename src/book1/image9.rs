@@ -8,7 +8,7 @@ use crate::tools::ray::Ray;
 use crate::tools::render_utils::{create_progress_bar, prepare_output_path, save_image};
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::sphere::Sphere;
-use crate::tools::vector3::{Point3, Vec3, ramdom_on_hemisphere, unit_vector};
+use crate::tools::vector3::{Point3, Vec3, random_on_hemisphere, unit_vector};
 use image::{ImageBuffer, RgbImage};
 
 fn ray_color(r: &Ray, depth: u32, world: &dyn Hittable) -> Vec3 {
@@ -19,7 +19,7 @@ fn ray_color(r: &Ray, depth: u32, world: &dyn Hittable) -> Vec3 {
     let mut rec: HitRecord = HitRecord::default();
 
     if world.hit(r, 0.001, INFINITY, &mut rec) {
-        let direction = ramdom_on_hemisphere(rec.normal);
+        let direction = random_on_hemisphere(rec.normal);
         return 0.5 * ray_color(&Ray::new(rec.p, direction), depth - 1, world);
     }
 

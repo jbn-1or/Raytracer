@@ -230,7 +230,7 @@ pub fn random_unit_vector() -> Vec3 {
 }
 
 /// 使生成的随机单位向量在正确的半球上（与给定法向内积为正）
-pub fn ramdom_on_hemisphere(normal: Vec3) -> Vec3 {
+pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
     let on_unit_sphere = random_unit_vector();
     if dot(on_unit_sphere, normal) > 0.0 {
         on_unit_sphere
