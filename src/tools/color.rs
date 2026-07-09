@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::vector3::Vec3;
 use image::Rgb;
 
