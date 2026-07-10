@@ -251,7 +251,7 @@ pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - 2.0 * dot(v, n) * n
 }
 
-// 根据入射向量和反射面法相和折射率，计算折射光向量
+// 根据入射向量和反射面法相和相对折射率，计算折射光向量
 pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) -> Vec3 {
     let cos_theta = f64::min(dot(-uv, n), 1.0);
     let r_out_perp = etai_over_etat * (uv + cos_theta * n);

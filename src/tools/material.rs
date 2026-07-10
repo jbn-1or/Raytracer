@@ -3,7 +3,7 @@
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
-use crate::tools::vector3::{dot, random_unit_vector, reflect, refract, unit_vector};
+use crate::tools::vector3::{Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质抽象接口，定义散射行为与衰减
 pub trait Material {
@@ -126,9 +126,17 @@ impl Material for Dielecric {
         };
 
         let unit_direction = unit_vector(r_in.direction());
-        let refracted = refract(unit_direction, rec.normal, ri);
+        let cos_theta = f64::min(dot(-unit_direction, rec.normal), 1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
-        *scattered = Ray::new(rec.p, refracted);
+        let cannot_refract = ri * sin_theta > 1.0;
+        let direction: Vec3 = if cannot_refract {
+            reflect(unit_direction, rec.normal)
+        } else {
+            refract(unit_direction, rec.normal, ri)
+        };
+
+        *scattered = Ray::new(rec.p, direction);
         true
     }
 }
