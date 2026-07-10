@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tools::rtweekend::degrees_to_radians;
+use crate::tools::vector3::{cross, unit_vector};
 
 use super::ray::Ray;
 use super::rtweekend::random_double;
@@ -18,12 +19,18 @@ pub struct Camera {
     pub samples_per_pixel: u32,
     /// 光线反射的最大次数
     pub max_depth: u32,
+
     /// 垂直视场角（fov）
     pub vfov: f64,
+    /// 相机look from的点
+    pub lookfrom: Point3,
+    /// 相机look at的点
+    pub lookat: Point3,
+    /// 相机平面上的“相对向上”方向
+    pub vup: Vec3,
 
     /// 渲染图像高度
     image_height: u32,
-
     /// 像素采样缩放因子（= 1.0 / samples_per_pixel）
     pixel_samples_scale: f64,
     /// 相机中心位置
@@ -34,26 +41,36 @@ pub struct Camera {
     pixel_delta_u: Vec3,
     /// 垂直方向相邻像素的偏移向量
     pixel_delta_v: Vec3,
+
+    // 相机坐标系向量
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl Camera {
-    /// 创建并初始化一个相机
-    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32) -> Self {
-        let mut cam = Self {
-            aspect_ratio,
-            image_width,
-            samples_per_pixel,
+    /// 创建并初始化一个相机（使用默认参数）
+    pub fn new() -> Self {
+        Self {
+            aspect_ratio: 1.0,
+            image_width: 100,
+            samples_per_pixel: 10,
             max_depth: 10,
             vfov: 90.0,
+            lookfrom: Point3::zero(),
+            lookat: Point3::new(0.0, 0.0, -1.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
+
             image_height: 0,
             pixel_samples_scale: 0.0,
             center: Point3::zero(),
             pixel00_loc: Point3::zero(),
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
-        };
-        cam.initialize();
-        cam
+            u: Vec3::zero(),
+            v: Vec3::zero(),
+            w: Vec3::zero(),
+        }
     }
 
     // ── getter
@@ -68,7 +85,9 @@ impl Camera {
     }
 
     /// 初始化相机参数：计算图像高度、视口尺寸、像素偏移等
-    fn initialize(&mut self) {
+    /// 必须在设置完 `aspect_ratio`、`image_width`、`samples_per_pixel`、
+    /// `max_depth`、`vfov`、`lookfrom`、`lookat`、`vup` 等参数后手动调用。
+    pub fn initialize(&mut self) {
         self.image_height = (self.image_width as f64 / self.aspect_ratio) as u32;
         if self.image_height < 1 {
             self.image_height = 1;
@@ -76,20 +95,22 @@ impl Camera {
 
         self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
-        self.center = Point3::new(0.0, 0.0, 0.0);
+        self.center = self.lookfrom;
 
         // 确定视口尺寸
-        let focal_length = 1.0;
-
+        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = degrees_to_radians(self.vfov);
         let h = f64::tan(theta / 2.0);
         let viewport_height = 2.0 * h * focal_length;
-
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
+        self.w = unit_vector(self.lookfrom - self.lookat);
+        self.u = unit_vector(cross(self.vup, self.w));
+        self.v = cross(self.w, self.u);
+
         // 计算水平与垂直方向跨越视口边缘的向量
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        let viewport_u = viewport_width * self.u;
+        let viewport_v = -viewport_height * self.v;
 
         // 计算像素与像素之间的水平和垂直差值向量
         self.pixel_delta_u = viewport_u / self.image_width as f64;
@@ -97,7 +118,7 @@ impl Camera {
 
         // 计算左上角像素的世界坐标
         let viewport_upper_left =
-            self.center - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+            self.center - focal_length * self.w - viewport_u / 2.0 - viewport_v / 2.0;
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
@@ -124,6 +145,6 @@ impl Camera {
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new(1.0, 100, 10)
+        Self::new()
     }
 }

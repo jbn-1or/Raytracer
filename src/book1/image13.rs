@@ -76,8 +76,12 @@ pub fn render() {
     )));
 
     // Camera
-    let mut cam: Camera = Camera::new(16.0 / 9.0, 400, 100);
+    let mut cam: Camera = Camera::new();
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width = 400;
+    cam.samples_per_pixel = 100;
     cam.max_depth = 50;
+    cam.initialize();
     let image_width = cam.image_width;
     let image_height = cam.image_height();
     let pixel_samples_scale = cam.pixel_samples_scale();
