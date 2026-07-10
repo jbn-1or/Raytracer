@@ -52,12 +52,18 @@ impl Vec3 {
         self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
     }
 
-    /// 生成三个分量均为随机的向量，[0,1)
+    /// 如果向量在所有维度上都非常接近零（阈值 1e-8），则返回 true
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
+    }
+
+    /// 生成三个分量均在 [0, 1) 范围内随机的向量
     fn random() -> Vec3 {
         Vec3::new(random_double(), random_double(), random_double())
     }
 
-    /// 生成三个分量均在指定范围内随机的向量
+    /// 生成三个分量均在 [min, max) 范围内随机的向量
     fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3::new(
             random_double_range(min, max),
@@ -68,6 +74,7 @@ impl Vec3 {
 }
 
 impl Default for Vec3 {
+    /// 默认构造函数，创建一个零向量
     fn default() -> Self {
         Self::zero()
     }
@@ -237,4 +244,9 @@ pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
     } else {
         -on_unit_sphere
     }
+}
+
+// 根据入射向量和反射面法向，计算反射光向量
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - 2.0 * dot(v, n) * n
 }

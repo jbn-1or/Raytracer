@@ -4,7 +4,8 @@ use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::ray::Ray;
 
 pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>, // 可击中物体的列表
+    /// 可击中物体的列表
+    objects: Vec<Box<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -39,7 +40,7 @@ impl Hittable for HittableList {
             if object.hit(r, ray_tmin, closest_so_far, &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
-                *rec = temp_rec;
+                *rec = temp_rec.clone();
             }
         }
 

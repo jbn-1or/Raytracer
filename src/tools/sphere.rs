@@ -1,12 +1,19 @@
 #![allow(dead_code)]
 
+use std::sync::Arc;
+
 use crate::tools::hittable::{HitRecord, Hittable};
+use crate::tools::material::Material;
 use crate::tools::ray::Ray;
 use crate::tools::vector3::{Point3, dot};
 
 pub struct Sphere {
-    center: Point3, // 球心坐标
-    radius: f64,    // 球体半径
+    /// 球心坐标
+    center: Point3,
+    /// 球体半径
+    radius: f64,
+    /// 球体材质
+    pub mat: Option<Arc<dyn Material>>,
 }
 
 impl Sphere {
@@ -17,7 +24,25 @@ impl Sphere {
         if radius < 0.0 {
             r = 0.0;
         }
-        Self { center, radius: r }
+        Self {
+            center,
+            radius: r,
+            mat: None,
+        }
+    }
+
+    /// 创建一个带有材质的球体，若半径为负数则自动钳位为 0
+    /// # 参数`center`-球心坐标 `radius`-球体半径 `mat`-球体材质
+    pub fn new_with_material(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Self {
+        let mut r = radius;
+        if radius < 0.0 {
+            r = 0.0;
+        }
+        Self {
+            center,
+            radius: r,
+            mat: Some(mat),
+        }
     }
 }
 
@@ -51,6 +76,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(r, outward_normal);
+        rec.mat = self.mat.clone();
 
         true
     }

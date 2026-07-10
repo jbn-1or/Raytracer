@@ -3,8 +3,10 @@
 use super::vector3::{Point3, Vec3};
 
 pub struct Ray {
-    orig: Point3, // 光线起点
-    dir: Vec3,    // 光线方向向量
+    /// 光线起点
+    orig: Point3,
+    /// 光线方向向量
+    dir: Vec3,
 }
 
 impl Ray {
@@ -17,7 +19,7 @@ impl Ray {
         }
     }
 
-    /// 创建一条位于原点、方向为零向量的光线
+    /// 创建一条位于原点、方向为零向量的光线（用于空初始化）
     pub const fn zero() -> Self {
         Self {
             orig: Point3::zero(),

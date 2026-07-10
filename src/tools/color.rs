@@ -7,6 +7,7 @@ use image::Rgb;
 
 pub type Color = Vec3;
 
+/// 将线性颜色分量转换为伽马空间（应用 sqrt 校正）
 fn linear_to_gamma(linear_component: f64) -> f64 {
     if linear_component > 0.0 {
         return linear_component.sqrt();
@@ -29,6 +30,8 @@ impl Color {
         *pixel = image::Rgb([r as u8, g as u8, b as u8]);
     }
 
+    /// 对颜色应用伽马校正后写入 RGB 像素缓冲区
+    /// # 参数`pixel_color`-像素颜色向量（各分量在[0,1]范围） `pixel`-目标RGB像素的可变引用
     pub fn write_color_gamma(pixel_color: Color, pixel: &mut Rgb<u8>) {
         let mut x = pixel_color.x();
         let mut y = pixel_color.y();

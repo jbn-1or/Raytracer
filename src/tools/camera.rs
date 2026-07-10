@@ -20,6 +20,7 @@ pub struct Camera {
     /// 渲染图像高度
     image_height: u32,
 
+    /// 像素采样缩放因子（= 1.0 / samples_per_pixel）
     pixel_samples_scale: f64,
     /// 相机中心位置
     center: Point3,
@@ -51,10 +52,12 @@ impl Camera {
     }
 
     // ── getter
+    /// 获取渲染图像高度
     pub fn image_height(&self) -> u32 {
         self.image_height
     }
 
+    /// 获取像素采样缩放因子
     pub fn pixel_samples_scale(&self) -> f64 {
         self.pixel_samples_scale
     }
@@ -104,7 +107,7 @@ impl Camera {
         Ray::new(self.center, ray_direction)
     }
 
-    /// 返回一个 x, y 分量随机的 Vec3（关于 0 对称）
+    /// 返回 x, y 分量在 [-0.5, 0.5) 范围内随机的 Vec3，z 分量为 0
     fn sample_square(&self) -> Vec3 {
         Vec3::new(random_double() - 0.5, random_double() - 0.5, 0.0)
     }

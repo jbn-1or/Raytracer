@@ -2,6 +2,7 @@ pub mod image1;
 pub mod image10;
 pub mod image11;
 pub mod image12;
+pub mod image13;
 pub mod image2;
 pub mod image3;
 pub mod image4;

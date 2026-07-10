@@ -13,8 +13,8 @@ fn main() {
     // book1::image9::render();
     // book1::image10::render();
     // book1::image11::render();
-    book1::image12::render();
-    // book1::image5::render();
+    // book1::image12::render();
+    book1::image13::render();
     // book1::image5::render();
     // book1::image5::render();
     // book1::image5::render();

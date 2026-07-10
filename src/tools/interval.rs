@@ -4,7 +4,9 @@ use super::rtweekend::INFINITY;
 
 /// 区间类，表示 [min, max] 范围内的数值
 pub struct Interval {
+    /// 区间下界
     pub min: f64,
+    /// 区间上界
     pub max: f64,
 }
 
