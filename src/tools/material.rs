@@ -3,7 +3,7 @@
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
-use crate::tools::vector3::{dot, random_unit_vector, reflect, unit_vector};
+use crate::tools::vector3::{dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质抽象接口，定义散射行为与衰减
 pub trait Material {
@@ -97,5 +97,38 @@ impl Material for Metal {
         *scattered = Ray::new(rec.p, reflected);
         *attenuation = self.albedo;
         dot(scattered.direction(), rec.normal) > 0.0
+    }
+}
+
+pub struct Dielecric {
+    refraction_index: f64,
+}
+
+impl Dielecric {
+    pub fn new(refraction_index: f64) -> Self {
+        Self { refraction_index }
+    }
+}
+
+impl Material for Dielecric {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        *attenuation = Color::new(1.0, 1.0, 1.0);
+        let ri = if rec.front_face {
+            1.0 / self.refraction_index
+        } else {
+            self.refraction_index
+        };
+
+        let unit_direction = unit_vector(r_in.direction());
+        let refracted = refract(unit_direction, rec.normal, ri);
+
+        *scattered = Ray::new(rec.p, refracted);
+        true
     }
 }

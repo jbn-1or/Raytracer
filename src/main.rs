@@ -15,9 +15,9 @@ fn main() {
     // book1::image11::render();
     // book1::image12::render();
     // book1::image13::render();
-    book1::image14::render();
+    // book1::image14::render();
     // book1::image15::render();
-    // book1::image16::render();
+    book1::image16::render();
     // book1::image17::render();
     // book1::image18::render();
     // book1::image19::render();

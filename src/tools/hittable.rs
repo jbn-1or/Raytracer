@@ -20,7 +20,7 @@ pub struct HitRecord {
     /// 物体的材质
     pub mat: Option<Arc<dyn Material>>,
     /// 光线是否从表面外部射入
-    front_face: bool,
+    pub front_face: bool,
 }
 
 impl Default for HitRecord {
