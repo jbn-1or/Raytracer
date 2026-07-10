@@ -3,7 +3,7 @@
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
-use crate::tools::vector3::{random_unit_vector, reflect};
+use crate::tools::vector3::{dot, random_unit_vector, reflect, unit_vector};
 
 /// 材质抽象接口，定义散射行为与衰减
 pub trait Material {
@@ -62,20 +62,29 @@ impl Material for Lambertian {
 pub struct Metal {
     /// 材质的反照率（颜色）
     albedo: Color,
+    fuzz: f64,
 }
 
 impl Metal {
     /// 创建金属材质
     /// # 参数`albedo`-材质的颜色
     pub fn new(albedo: Color) -> Self {
-        Self { albedo }
+        Self { albedo, fuzz: 0.0 }
+    }
+
+    pub fn new_with_fuzz(albedo: Color, fu: f64) -> Self {
+        let mut fuz = fu;
+        if fuz > 1.0 {
+            fuz = 1.0
+        }
+        Self { albedo, fuzz: fuz }
     }
 }
 
 impl Material for Metal {
     /// 计算金属材质的散射光线和衰减
     /// 光线沿法线反射
-    /// # 返回值：始终返回 true（光线总是被反射）
+    /// # 返回值：光线是否被反射
     fn scatter(
         &self,
         r_in: &Ray,
@@ -83,9 +92,10 @@ impl Material for Metal {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        let reflected = reflect(r_in.direction(), rec.normal);
+        let mut reflected = reflect(r_in.direction(), rec.normal);
+        reflected = unit_vector(reflected) + (self.fuzz * random_unit_vector());
         *scattered = Ray::new(rec.p, reflected);
         *attenuation = self.albedo;
-        true
+        dot(scattered.direction(), rec.normal) > 0.0
     }
 }
