@@ -121,4 +121,3 @@ pub fn render() {
 
     save_image(&img, &path);
 }
-
