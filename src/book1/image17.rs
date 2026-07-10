@@ -59,7 +59,7 @@ pub fn render() {
         0.5,
         center_material,
     )));
-    // 左侧：白色金属材质
+    // 左侧
     let left_material: Arc<dyn Material> = Arc::new(Dielecric::new(1.00 / 1.33));
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(-1.0, 0.0, -1.0),

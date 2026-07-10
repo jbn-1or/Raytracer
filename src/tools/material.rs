@@ -3,6 +3,7 @@
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
+use crate::tools::rtweekend::random_double;
 use crate::tools::vector3::{Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质抽象接口，定义散射行为与衰减
@@ -110,6 +111,12 @@ impl Dielecric {
     }
 }
 
+fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
+    let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+    r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+}
+
 impl Material for Dielecric {
     fn scatter(
         &self,
@@ -130,7 +137,7 @@ impl Material for Dielecric {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         let cannot_refract = ri * sin_theta > 1.0;
-        let direction: Vec3 = if cannot_refract {
+        let direction: Vec3 = if cannot_refract || reflectance(cos_theta, ri) > random_double() {
             reflect(unit_direction, rec.normal)
         } else {
             refract(unit_direction, rec.normal, ri)
