@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use crate::tools::rtweekend::degrees_to_radians;
+
 use super::ray::Ray;
 use super::rtweekend::random_double;
 use super::vector3::{Point3, Vec3};
@@ -16,6 +18,8 @@ pub struct Camera {
     pub samples_per_pixel: u32,
     /// 光线反射的最大次数
     pub max_depth: u32,
+    /// 垂直视场角（fov）
+    pub vfov: f64,
 
     /// 渲染图像高度
     image_height: u32,
@@ -40,6 +44,7 @@ impl Camera {
             image_width,
             samples_per_pixel,
             max_depth: 10,
+            vfov: 90.0,
             image_height: 0,
             pixel_samples_scale: 0.0,
             center: Point3::zero(),
@@ -75,7 +80,11 @@ impl Camera {
 
         // 确定视口尺寸
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+
+        let theta = degrees_to_radians(self.vfov);
+        let h = f64::tan(theta / 2.0);
+        let viewport_height = 2.0 * h * focal_length;
+
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
         // 计算水平与垂直方向跨越视口边缘的向量
