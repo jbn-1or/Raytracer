@@ -23,8 +23,8 @@ fn main() {
     // book1::image19::render();
     // book1::image20::render();
     // book1::image21::render();
-    book1::image22::render();
-    // book1::image23::render();
+    // book1::image22::render();
+    book1::image23::render();
 
     // book2::image1::render();
     // book2::image2::render();
