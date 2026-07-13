@@ -3,6 +3,7 @@
 use super::rtweekend::INFINITY;
 
 /// 区间类，表示 [min, max] 范围内的数值
+#[derive(Clone, Copy)]
 pub struct Interval {
     /// 区间下界
     pub min: f64,
@@ -40,6 +41,20 @@ impl Interval {
             return self.max;
         };
         x
+    }
+
+    /// 将区间向两端各扩展 delta/2，返回新区间。用于 BVH 节点的容差扩展
+    pub fn expand(&self, delta: f64) -> Self {
+        let padding = delta / 2.0;
+        Interval::new(self.min - padding, self.max + padding)
+    }
+
+    /// 从两个区间创建能紧密包围二者的新区间
+    pub fn from_intervals(a: Self, b: Self) -> Self {
+        Self {
+            min: if a.min <= b.min { a.min } else { b.min },
+            max: if a.max >= b.max { a.max } else { b.max },
+        }
     }
 
     /// 空区间常量

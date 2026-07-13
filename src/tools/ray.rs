@@ -7,11 +7,12 @@ pub struct Ray {
     orig: Point3,
     /// 光线方向向量
     dir: Vec3,
+    /// 光线的时间戳，用于运动模糊（motion blur）
     tm: f64,
 }
 
 impl Ray {
-    /// 从起点和方向创建一条光线
+    /// 从起点和方向创建一条光线（时间戳默认为 0）
     /// # 参数`origin`-光线起点 `direction`-光线方向向量
     pub const fn new(origin: Point3, direction: Vec3) -> Self {
         Self {
@@ -21,6 +22,8 @@ impl Ray {
         }
     }
 
+    /// 创建带时间戳的光线，用于运动模糊效果
+    /// # 参数`origin`-光线起点 `direction`-光线方向向量 `time`-光线时间戳
     pub const fn new_with_time(origin: Point3, direction: Vec3, time: f64) -> Self {
         Self {
             orig: origin,
@@ -48,6 +51,7 @@ impl Ray {
         self.dir
     }
 
+    /// 获取光线的时间戳
     pub fn time(&self) -> f64 {
         self.tm
     }

@@ -3,6 +3,7 @@
 
 use std::sync::Arc;
 
+use crate::tools::aabb::Aabb;
 use crate::tools::vector3::{Point3, Vec3, dot};
 
 use super::material::Material;
@@ -55,5 +56,10 @@ pub trait Hittable {
     /// # 参数`r`-入射光线 `ray_tmin（max）`-光线参数 t 的最小（大）阈值 `rec`-储存HitRecord
     fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
         false
+    }
+
+    /// 返回物体的轴对齐包围盒（AABB），默认返回空包围盒
+    fn bounding_box(&self) -> Aabb {
+        Aabb::default()
     }
 }

@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use crate::tools::aabb::Aabb;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::material::Material;
 use crate::tools::ray::Ray;
@@ -14,6 +15,8 @@ pub struct Sphere {
     radius: f64,
     /// 球体材质
     pub mat: Option<Arc<dyn Material>>,
+    /// 包围盒
+    bbox: Aabb,
 }
 
 impl Sphere {
@@ -24,10 +27,12 @@ impl Sphere {
         if radius < 0.0 {
             r = 0.0;
         }
+        let rvec = Vec3::new(r, r, r);
         Self {
             center: Ray::new(static_center, Vec3::new(0.0, 0.0, 0.0)),
             radius: r,
             mat: None,
+            bbox: Aabb::new_with_points(static_center - rvec, static_center + rvec),
         }
     }
 
@@ -38,13 +43,17 @@ impl Sphere {
         if radius < 0.0 {
             r = 0.0;
         }
+        let rvec = Vec3::new(r, r, r);
         Self {
             center: Ray::new(static_center, Vec3::new(0.0, 0.0, 0.0)),
             radius: r,
             mat: Some(mat),
+            bbox: Aabb::new_with_points(static_center - rvec, static_center + rvec),
         }
     }
 
+    /// 创建带运动模糊的球体，球心在 `center1` 到 `center2` 间随时间线性移动
+    /// # 参数`center1`-t=0 时的球心坐标 `center2`-t=1 时的球心坐标 `radius`-球体半径 `mat`-球体材质
     pub fn new_move_with_material(
         center1: Point3,
         center2: Point3,
@@ -55,10 +64,14 @@ impl Sphere {
         if radius < 0.0 {
             r = 0.0;
         }
+        let rvec = Vec3::new(r, r, r);
+        let box1 = Aabb::new_with_points(center1 - rvec, center1 + rvec);
+        let box2 = Aabb::new_with_points(center2 - rvec, center2 + rvec);
         Self {
             center: Ray::new(center1, center2 - center1),
             radius: r,
             mat: Some(mat),
+            bbox: Aabb::new_with_boxes(&box1, &box2),
         }
     }
 }
@@ -97,5 +110,9 @@ impl Hittable for Sphere {
         rec.mat = self.mat.clone();
 
         true
+    }
+
+    fn bounding_box(&self) -> Aabb {
+        self.bbox
     }
 }

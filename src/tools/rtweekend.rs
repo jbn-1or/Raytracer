@@ -25,3 +25,8 @@ pub fn random_double() -> f64 {
 pub fn random_double_range(min: f64, max: f64) -> f64 {
     min + (max - min) * random_double()
 }
+
+#[inline]
+pub fn random_int(min: u32, max: u32) -> u32 {
+    random_double_range(min as f64, max as f64 + 1.0) as u32
+}

@@ -58,12 +58,12 @@ impl Vec3 {
         self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
     }
 
-    /// 生成三个分量均在 [0, 1) 范围内随机的向量
+    /// 生成各分量在 [0, 1) 内均匀随机的向量，用于随机采样
     fn random() -> Vec3 {
         Vec3::new(random_double(), random_double(), random_double())
     }
 
-    /// 生成三个分量均在 [min, max) 范围内随机的向量
+    /// 生成各分量在 [min, max) 内均匀随机的向量
     fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3::new(
             random_double_range(min, max),
@@ -260,12 +260,14 @@ pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
     }
 }
 
-// 根据入射向量和反射面法向，计算反射光向量
+/// 计算镜面反射方向：`v - 2(v·n)n`
+/// # 参数 `v` - 入射方向向量 `n` - 表面法线（需为单位向量）
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - 2.0 * dot(v, n) * n
 }
 
-// 根据入射向量和反射面法相和相对折射率，计算折射光向量
+/// 使用 Snell 定律计算折射方向
+/// # 参数 `uv` - 入射方向（单位向量） `n` - 表面法线（单位向量） `etai_over_etat` - 入射介质折射率与折射介质折射率之比
 pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) -> Vec3 {
     let cos_theta = f64::min(dot(-uv, n), 1.0);
     let r_out_perp = etai_over_etat * (uv + cos_theta * n);

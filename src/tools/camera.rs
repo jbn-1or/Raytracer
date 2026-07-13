@@ -53,8 +53,11 @@ pub struct Camera {
     defocus_dist_v: Vec3,
 
     // 相机坐标系向量
+    /// 相机局部坐标系的 u 轴（水平向右）
     u: Vec3,
+    /// 相机局部坐标系的 v 轴（垂直向上）
     v: Vec3,
+    /// 相机局部坐标系的 w 轴（指向相机后方）
     w: Vec3,
 }
 
@@ -187,6 +190,7 @@ impl Camera {
 }
 
 impl Default for Camera {
+    /// 默认构造等同于 `Camera::new()`
     fn default() -> Self {
         Self::new()
     }

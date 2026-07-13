@@ -6,7 +6,7 @@ use crate::tools::ray::Ray;
 use crate::tools::rtweekend::random_double;
 use crate::tools::vector3::{Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
-/// 材质抽象接口，定义散射行为与衰减
+/// 材质 trait，定义光线与表面交互时的散射行为
 pub trait Material {
     /// 产生散射光线（或说明它吸收了入射光线），若散射，说明光线应该衰减多少
     /// # 返回值：true 表示光线被散射，false 表示光线被吸收
@@ -63,6 +63,7 @@ impl Material for Lambertian {
 pub struct Metal {
     /// 材质的反照率（颜色）
     albedo: Color,
+    /// 表面粗糙度（0=完美镜面，1=极度粗糙），使反射方向加入随机扰动
     fuzz: f64,
 }
 
@@ -73,6 +74,8 @@ impl Metal {
         Self { albedo, fuzz: 0.0 }
     }
 
+    /// 创建带粗糙度的金属材质，`fuzz` 超出 [0,1] 时自动钳位到 1
+    /// # 参数`albedo`-材质的颜色 `fu`-粗糙度（0~1）
     pub fn new_with_fuzz(albedo: Color, fu: f64) -> Self {
         let mut fuz = fu;
         if fuz > 1.0 {
@@ -101,16 +104,22 @@ impl Material for Metal {
     }
 }
 
+/// 电介质材质（如玻璃、水），同时支持折射和菲涅尔反射
 pub struct Dielecric {
+    /// 材质的折射率（相对于真空），常见值：玻璃≈1.5，水≈1.33
     refraction_index: f64,
 }
 
 impl Dielecric {
+    /// 创建电介质材质
+    /// # 参数`refraction_index`-折射率（通常 >1）
     pub fn new(refraction_index: f64) -> Self {
         Self { refraction_index }
     }
 }
 
+/// 使用 Schlick 近似计算菲涅尔反射率，决定反射与折射的能量分配
+/// # 参数`cosine`-入射角余弦值 `refraction_index`-相对折射率
 fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
     let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
     r0 = r0 * r0;
@@ -118,6 +127,8 @@ fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
 }
 
 impl Material for Dielecric {
+    /// 电介质材质的散射：根据入射角度和折射率决定反射或折射，模拟全内反射与菲涅尔效应
+    /// # 返回值：始终返回 true（光线总是被散射，不会吸收）
     fn scatter(
         &self,
         r_in: &Ray,
