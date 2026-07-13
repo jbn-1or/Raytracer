@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use crate::tools::bvh::BvhNode;
 use crate::tools::camera::Camera;
 use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
@@ -125,11 +126,15 @@ pub fn render() {
         material3,
     )));
 
+    let bvh_node = BvhNode::from_list(world);
+    let mut world = HittableList::new();
+    world.add(Box::new(bvh_node));
+
     // Camera
     let mut cam: Camera = Camera::new();
     cam.aspect_ratio = 16.0 / 9.0;
     cam.image_width = 1200;
-    cam.samples_per_pixel = 10;
+    cam.samples_per_pixel = 500;
     cam.max_depth = 50;
 
     cam.vfov = 20.0;

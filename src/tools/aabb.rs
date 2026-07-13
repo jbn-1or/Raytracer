@@ -74,6 +74,17 @@ impl Aabb {
         }
     }
 
+    /// 返回最长轴的索引：0→x, 1→y, 2→z
+    pub fn longest_axis(&self) -> usize {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() { 0 } else { 2 }
+        } else if self.y.size() > self.z.size() {
+            1
+        } else {
+            2
+        }
+    }
+
     /// 使用平板法（slab method）检测光线是否与 AABB 相交
     pub fn hit(&self, r: &Ray, mut ray_t: Interval) -> bool {
         let ray_orig = r.origin();
@@ -108,4 +119,18 @@ impl Aabb {
         }
         true
     }
+
+    /// 空包围盒常量（所有轴区间为空）
+    pub const EMPTY: Self = Self {
+        x: Interval::EMPTY,
+        y: Interval::EMPTY,
+        z: Interval::EMPTY,
+    };
+
+    /// 全空间包围盒常量（所有轴区间为全空间）
+    pub const UNIVERSE: Self = Self {
+        x: Interval::UNIVERSE,
+        y: Interval::UNIVERSE,
+        z: Interval::UNIVERSE,
+    };
 }

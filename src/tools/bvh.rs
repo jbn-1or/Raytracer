@@ -7,8 +7,6 @@ use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
 use crate::tools::interval::Interval;
 use crate::tools::ray::Ray;
-use crate::tools::rtweekend::random_int;
-
 /// 盒子比较函数类型
 type BoxCompareFn = dyn Fn(&Rc<dyn Hittable>, &Rc<dyn Hittable>) -> std::cmp::Ordering;
 
@@ -34,8 +32,13 @@ impl BvhNode {
 
     /// 从物体切片递归构建 BVH 树
     fn from_objects(objects: &[Rc<dyn Hittable>], start: usize, end: usize) -> Self {
-        // 随机选取 xyz 作为排序依据
-        let axis = random_int(0, 2) as usize;
+        // 构建对象跨度的包围盒
+        let mut bbox = Aabb::EMPTY;
+        for obj in objects[start..end].iter() {
+            bbox = Aabb::new_with_boxes(&bbox, &obj.bounding_box());
+        }
+
+        let axis = bbox.longest_axis();
 
         let comparator: &BoxCompareFn = if axis == 0 {
             &Self::box_x_compare
@@ -68,12 +71,6 @@ impl BvhNode {
                 Rc::new(left_node) as Rc<dyn Hittable>,
                 Rc::new(right_node) as Rc<dyn Hittable>,
             )
-        };
-
-        let bbox = {
-            let left_bbox = left.bounding_box();
-            let right_bbox = right.bounding_box();
-            Aabb::new_with_boxes(&left_bbox, &right_bbox)
         };
 
         Self { left, right, bbox }
