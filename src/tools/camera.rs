@@ -170,7 +170,8 @@ impl Camera {
             self.defocus_disk_sample()
         };
         let ray_direction = pixel_center - ray_origin;
-        Ray::new(ray_origin, ray_direction)
+        let ray_time = random_double();
+        Ray::new_with_time(ray_origin, ray_direction, ray_time)
     }
 
     /// 返回 x, y 分量在 [-0.5, 0.5) 范围内随机的 Vec3，z 分量为 0

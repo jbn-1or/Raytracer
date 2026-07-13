@@ -7,6 +7,7 @@ pub struct Ray {
     orig: Point3,
     /// 光线方向向量
     dir: Vec3,
+    tm: f64,
 }
 
 impl Ray {
@@ -16,6 +17,15 @@ impl Ray {
         Self {
             orig: origin,
             dir: direction,
+            tm: 0.0,
+        }
+    }
+
+    pub const fn new_with_time(origin: Point3, direction: Vec3, time: f64) -> Self {
+        Self {
+            orig: origin,
+            dir: direction,
+            tm: time,
         }
     }
 
@@ -24,6 +34,7 @@ impl Ray {
         Self {
             orig: Point3::zero(),
             dir: Vec3::zero(),
+            tm: 0.0,
         }
     }
 
@@ -35,6 +46,10 @@ impl Ray {
     /// 获取光线方向
     pub const fn direction(&self) -> Vec3 {
         self.dir
+    }
+
+    pub fn time(&self) -> f64 {
+        self.tm
     }
 
     /// 计算光线在参数 t 处的坐标位置
