@@ -8,6 +8,7 @@ pub mod interval;
 pub mod material;
 pub mod ray;
 pub mod render_utils;
+pub mod rtw_image;
 pub mod rtweekend;
 pub mod sphere;
 pub mod texture;
