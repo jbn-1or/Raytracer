@@ -10,4 +10,5 @@ pub mod ray;
 pub mod render_utils;
 pub mod rtweekend;
 pub mod sphere;
+pub mod texture;
 pub mod vector3;

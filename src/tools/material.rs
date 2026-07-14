@@ -1,9 +1,12 @@
 #![allow(dead_code)]
 
+use std::sync::Arc;
+
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
 use crate::tools::rtweekend::random_double;
+use crate::tools::texture::{SolidColor, Texture};
 use crate::tools::vector3::{Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质 trait，定义光线与表面交互时的散射行为
@@ -23,15 +26,23 @@ pub trait Material {
 
 /// 朗伯（漫反射）材质
 pub struct Lambertian {
-    /// 材质的反照率（颜色）
-    albedo: Color,
+    /// 材质的纹理（兼容无纹理：颜色反照率）
+    tex: Arc<dyn Texture>,
 }
 
 impl Lambertian {
-    /// 创建朗伯材质
+    /// 从颜色创建朗伯材质（内部包装为 SolidColor 纹理）
     /// # 参数`albedo`-材质的反照率颜色
     pub fn new(albedo: Color) -> Self {
-        Self { albedo }
+        Self {
+            tex: Arc::new(SolidColor::from_color(albedo)),
+        }
+    }
+
+    /// 从纹理创建朗伯材质
+    /// # 参数`texture`-材质的纹理
+    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+        Self { tex: texture }
     }
 }
 
@@ -54,7 +65,7 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new_with_time(rec.p, scatter_direction, _r_in.time());
-        *attenuation = self.albedo;
+        *attenuation = self.tex.value(rec.u, rec.v, rec.p);
         true
     }
 }

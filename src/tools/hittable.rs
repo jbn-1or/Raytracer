@@ -20,6 +20,9 @@ pub struct HitRecord {
     pub t: f64,
     /// 物体的材质
     pub mat: Option<Arc<dyn Material>>,
+    /// 光线-物体击中点的 u,v 表面坐标
+    pub u: f64,
+    pub v: f64,
     /// 光线是否从表面外部射入
     pub front_face: bool,
 }
@@ -32,6 +35,8 @@ impl Default for HitRecord {
             normal: Vec3::zero(),
             t: 0.0,
             mat: None,
+            u: 0.0,
+            v: 0.0,
             front_face: false,
         }
     }
