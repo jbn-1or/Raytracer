@@ -7,6 +7,7 @@ use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::material::Material;
 use crate::tools::ray::Ray;
 use crate::tools::vector3::{Point3, Vec3, dot};
+use std::f64::consts::PI;
 
 pub struct Sphere {
     /// 球心坐标
@@ -74,7 +75,20 @@ impl Sphere {
             bbox: Aabb::new_with_boxes(&box1, &box2),
         }
     }
-}
+
+    /// p: 单位球（中心在原点、半径为 1）上的一个点
+    /// 返回 (u, v)，均落在 [0, 1]
+    pub fn get_sphere_uv(p: &Point3, u: &mut f64, v: &mut f64) {
+        // theta: 从 +Y 极点量起的极角，范围 [0, π]
+        let theta = (-p.y()).acos();
+        // phi: 在 X-Z 赤道平面内绕 Y 轴的角，范围 (0, 2π]
+        let phi = (-p.z()).atan2(p.x()) + PI;
+
+        *u = phi / (2.0 * PI);
+        *v = theta / PI;
+    }
+
+    }
 
 impl Hittable for Sphere {
     /// 检测光线是否与球体相交，若相交则更新 HitRecord
@@ -107,6 +121,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - current_center) / self.radius;
         rec.set_face_normal(r, outward_normal);
+        Sphere::get_sphere_uv(&outward_normal, &mut rec.u, &mut rec.v);
         rec.mat = self.mat.clone();
 
         true
