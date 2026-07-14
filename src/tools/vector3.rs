@@ -64,7 +64,7 @@ impl Vec3 {
     }
 
     /// 生成各分量在 [min, max) 内均匀随机的向量
-    fn random_range(min: f64, max: f64) -> Vec3 {
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3::new(
             random_double_range(min, max),
             random_double_range(min, max),
