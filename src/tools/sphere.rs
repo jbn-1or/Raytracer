@@ -87,8 +87,7 @@ impl Sphere {
         *u = phi / (2.0 * PI);
         *v = theta / PI;
     }
-
-    }
+}
 
 impl Hittable for Sphere {
     /// 检测光线是否与球体相交，若相交则更新 HitRecord

@@ -30,9 +30,9 @@ fn main() {
     // book2::image2_1::render();
     // book2::image2_1_2::render();
     // book2::image2_2::render();
-    book2::image2_3::render();
+    // book2::image2_3::render();
     // book2::image2_4::render();
-    // book2::image2_5::render();
+    book2::image2_5::render();
     // book2::image2_6::render();
     // book2::image2_7::render();
     // book2::image2_8::render();

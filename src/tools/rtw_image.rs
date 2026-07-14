@@ -91,8 +91,18 @@ impl RtwImage {
         let bytes_per_pixel = 3u32;
         let bytes_per_scanline = image_width * bytes_per_pixel;
 
-        // 获取原始字节数据（直接在线性空间，不做任何 gamma 校正）
-        let bdata = img.into_raw();
+        // 获取原始字节数据（sRGB 编码的字节）
+        let raw_data = img.into_raw();
+
+        // 将 sRGB 编码的字节转换为线性空间字节
+        // sRGB → 线性：linear = (srgb / 255.0)^2.2 * 255.0
+        let bdata: Vec<u8> = raw_data
+            .iter()
+            .map(|&b| {
+                let linear = (b as f64 / 255.0).powf(2.2);
+                (linear * 255.0).round().clamp(0.0, 255.0) as u8
+            })
+            .collect();
 
         Ok(Self {
             image_width,
