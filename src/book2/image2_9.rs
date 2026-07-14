@@ -42,7 +42,7 @@ fn ray_color(r: &Ray, depth: u32, world: &dyn Hittable) -> Vec3 {
 pub fn render() {
     let path = prepare_output_path("output/book2/image9.png");
 
-    let pertext = Arc::new(NoiseTexture::new());
+    let pertext = Arc::new(NoiseTexture::new(1.0));
     let material = Arc::new(Lambertian::new_with_texture(pertext));
     let sphere1 = Box::new(Sphere::new_with_material(
         Point3::new(0.0, -1000.0, 0.0),
