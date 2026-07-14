@@ -33,13 +33,49 @@ impl Perlin {
     }
 
     /// 计算点 `p` 处的噪声值
-    /// 通过将坐标映射到离散网格，使用排列数组索引随机浮点数组
+    /// 使用三线性插值平滑结果
     pub fn noise(&self, p: &Point3) -> f64 {
-        let i = ((4.0 * p.x()) as i32 & 255) as usize;
-        let j = ((4.0 * p.y()) as i32 & 255) as usize;
-        let k = ((4.0 * p.z()) as i32 & 255) as usize;
+        let u = p.x() - p.x().floor();
+        let v = p.y() - p.y().floor();
+        let w = p.z() - p.z().floor();
 
-        self.randfloat[self.perm_x[i] ^ self.perm_y[j] ^ self.perm_z[k]]
+        let i = p.x().floor() as i32;
+        let j = p.y().floor() as i32;
+        let k = p.z().floor() as i32;
+
+        let mut c = [[[0.0_f64; 2]; 2]; 2];
+
+        for (di, c_di) in c.iter_mut().enumerate() {
+            for (dj, c_dj) in c_di.iter_mut().enumerate() {
+                for (dk, c_val) in c_dj.iter_mut().enumerate() {
+                    *c_val = self.randfloat[self.perm_x[((i + di as i32) & 255) as usize]
+                        ^ self.perm_y[((j + dj as i32) & 255) as usize]
+                        ^ self.perm_z[((k + dk as i32) & 255) as usize]];
+                }
+            }
+        }
+
+        Self::trilinear_interp(&c, u, v, w)
+    }
+
+    /// 三线性插值函数
+    /// 对 2×2×2 网格的八个顶点进行平滑插值
+    fn trilinear_interp(c: &[[[f64; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
+        let mut accum = 0.0;
+        for (i, c_i) in c.iter().enumerate() {
+            for (j, c_j) in c_i.iter().enumerate() {
+                for (k, val) in c_j.iter().enumerate() {
+                    let i_f = i as f64;
+                    let j_f = j as f64;
+                    let k_f = k as f64;
+                    accum += (i_f * u + (1.0 - i_f) * (1.0 - u))
+                        * (j_f * v + (1.0 - j_f) * (1.0 - v))
+                        * (k_f * w + (1.0 - k_f) * (1.0 - w))
+                        * val;
+                }
+            }
+        }
+        accum
     }
 
     /// 生成一个 [0, POINT_COUNT) 的排列数组
