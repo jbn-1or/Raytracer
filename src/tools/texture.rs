@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::tools::{color::Color, interval::Interval, vector3::Point3};
+use crate::tools::{color::Color, interval::Interval, perlin::Perlin, vector3::Point3};
 
 use super::rtw_image::RtwImage;
 
@@ -107,5 +107,23 @@ impl Texture for ImageTexture {
             color_scale * pixel[1] as f64,
             color_scale * pixel[2] as f64,
         )
+    }
+}
+
+pub struct NoiseTexture {
+    noise: Perlin,
+}
+
+impl NoiseTexture {
+    pub fn new() -> Self {
+        Self {
+            noise: Perlin::new(),
+        }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, _u: f64, _v: f64, _p: Point3) -> Color {
+        Color::new(1.0, 1.0, 1.0) * self.noise.noise(&_p)
     }
 }
