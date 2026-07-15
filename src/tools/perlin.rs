@@ -64,6 +64,22 @@ impl Perlin {
         Self::perlin_interp(&c, u, v, w)
     }
 
+    /// 湍流函数：叠加多个频率的噪声
+    /// 对噪声进行递归调用并求和，产生更复杂的纹理效果
+    pub fn turb(&self, p: &Point3, depth: i32) -> f64 {
+        let mut accum = 0.0;
+        let mut temp_p = *p;
+        let mut weight = 1.0;
+
+        for _ in 0..depth {
+            accum += weight * self.noise(&temp_p);
+            weight *= 0.5;
+            temp_p = 2.0 * temp_p;
+        }
+
+        accum.abs()
+    }
+
     /// Perlin 插值函数
     /// 对 2×2×2 网格的八个顶点进行平滑插值，
     /// 使用随机向量的点积使噪声最小/最大值偏离格点
