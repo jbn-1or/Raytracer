@@ -9,7 +9,6 @@ pub mod image2_16;
 pub mod image2_17;
 pub mod image2_18;
 pub mod image2_19;
-pub mod image2_1_2;
 pub mod image2_2;
 pub mod image2_20;
 pub mod image2_21;

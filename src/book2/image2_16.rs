@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use crate::tools::bvh::BvhNode;
 use crate::tools::camera::Camera;
 use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
@@ -81,6 +82,11 @@ pub fn render() {
         Vec3::new(0.0, 0.0, -4.0),
         lower_teal,
     )));
+
+    // 用 BVH 加速结构包装世界
+    let bvh_node = BvhNode::from_list(world);
+    let mut world = HittableList::new();
+    world.add(Box::new(bvh_node));
 
     // Camera
     let mut cam: Camera = Camera::new();
