@@ -24,21 +24,25 @@ impl Default for Aabb {
 }
 
 impl Aabb {
-    /// 从三个轴区间直接构造 AABB
+    /// 从三个轴区间直接构造 AABB，自动调用 `pad_to_minimums` 避免零厚度
     pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
-        Self { x, y, z }
+        let mut bbox = Self { x, y, z };
+        bbox.pad_to_minimums();
+        bbox
     }
 
-    /// 从两个 AABB 构造一个能紧密包围二者的新 AABB
+    /// 从两个 AABB 构造一个能紧密包围二者的新 AABB，自动调用 `pad_to_minimums`
     pub fn new_with_boxes(box0: &Self, box1: &Self) -> Self {
-        Self {
+        let mut bbox = Self {
             x: Interval::from_intervals(box0.x, box1.x),
             y: Interval::from_intervals(box0.y, box1.y),
             z: Interval::from_intervals(box0.z, box1.z),
-        }
+        };
+        bbox.pad_to_minimums();
+        bbox
     }
 
-    /// 以 a、b 为对角顶点构造 AABB，自动处理大小顺序
+    /// 以 a、b 为对角顶点构造 AABB，自动处理大小顺序并调用 `pad_to_minimums`
     pub fn new_with_points(a: Point3, b: Point3) -> Self {
         let intervalx: Interval = if a[0] > b[0] {
             Interval::new(b[0], a[0])
@@ -56,10 +60,26 @@ impl Aabb {
             Interval::new(a[2], b[2])
         };
 
-        Self {
+        let mut bbox = Self {
             x: intervalx,
             y: intervaly,
             z: intervalz,
+        };
+        bbox.pad_to_minimums();
+        bbox
+    }
+
+    /// 调整 AABB，确保每个维度至少有一定厚度，避免零尺寸导致的数值问题
+    fn pad_to_minimums(&mut self) {
+        let delta = 0.0001;
+        if self.x.size() < delta {
+            self.x = self.x.expand(delta);
+        }
+        if self.y.size() < delta {
+            self.y = self.y.expand(delta);
+        }
+        if self.z.size() < delta {
+            self.z = self.z.expand(delta);
         }
     }
 
@@ -85,7 +105,7 @@ impl Aabb {
         }
     }
 
-    /// 使用平板法（slab method）检测光线是否与 AABB 相交
+    /// 使用平板法检测光线是否与 AABB 相交
     pub fn hit(&self, r: &Ray, mut ray_t: Interval) -> bool {
         let ray_orig = r.origin();
         let ray_dir = r.direction();
