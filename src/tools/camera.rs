@@ -3,6 +3,7 @@
 use crate::tools::rtweekend::degrees_to_radians;
 use crate::tools::vector3::{cross, unit_vector};
 
+use super::color::Color;
 use super::ray::Ray;
 use super::rtweekend::random_double;
 use super::vector3::{Point3, Vec3, random_in_unit_disk};
@@ -20,6 +21,9 @@ pub struct Camera {
     pub samples_per_pixel: u32,
     /// 光线反射的最大次数
     pub max_depth: u32,
+
+    /// 场景背景色
+    pub background: Color,
 
     /// 垂直视场角（fov）
     pub vfov: f64,
@@ -65,6 +69,7 @@ impl Camera {
     /// 创建并初始化一个相机（使用默认参数）
     pub fn new() -> Self {
         Self {
+            background: Color::new(0.0, 0.0, 0.0),
             aspect_ratio: 1.0,
             image_width: 100,
             samples_per_pixel: 10,

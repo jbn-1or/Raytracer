@@ -7,7 +7,7 @@ use crate::tools::hittable::HitRecord;
 use crate::tools::ray::Ray;
 use crate::tools::rtweekend::random_double;
 use crate::tools::texture::{SolidColor, Texture};
-use crate::tools::vector3::{Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
+use crate::tools::vector3::{Point3, Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质 trait，定义光线与表面交互时的散射行为
 pub trait Material {
@@ -21,6 +21,12 @@ pub trait Material {
         _scattered: &mut Ray,
     ) -> bool {
         false
+    }
+
+    /// 返回材质发射（自发光）的颜色
+    /// 非发光材质默认返回黑色
+    fn emitted(&self, _u: f64, _v: f64, _p: Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
     }
 }
 
@@ -112,6 +118,44 @@ impl Material for Metal {
         *scattered = Ray::new_with_time(rec.p, reflected, r_in.time());
         *attenuation = self.albedo;
         dot(scattered.direction(), rec.normal) > 0.0
+    }
+}
+
+/// 自发光材质（光源），向场景发射光线而不散射
+pub struct DiffuseLight {
+    /// 材质的发光纹理
+    tex: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    /// 从颜色创建自发光材质（内部包装为 SolidColor 纹理）
+    /// # 参数`emit`-发光颜色
+    pub fn new(emit: Color) -> Self {
+        Self {
+            tex: Arc::new(SolidColor::from_color(emit)),
+        }
+    }
+
+    /// 从纹理创建自发光材质
+    /// # 参数`texture`-发光纹理
+    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+        Self { tex: texture }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: Point3) -> Color {
+        self.tex.value(u, v, p)
     }
 }
 

@@ -6,23 +6,39 @@ use crate::tools::{color::Color, interval::Interval, perlin::Perlin, vector3::Po
 
 use super::rtw_image::RtwImage;
 
+/// 纹理抽象接口，定义通过表面参数 (u, v) 和空间坐标 (p) 获取颜色的行为
 pub trait Texture: Send + Sync {
+    /// 计算纹理在给定表面参数 (u, v) 和空间位置 p 处的颜色
+    /// # 参数
+    /// * `_u` - 纹理水平坐标（沿 u 方向）
+    /// * `_v` - 纹理垂直坐标（沿 v 方向）
+    /// * `_p` - 击中点的世界空间坐标
     fn value(&self, _u: f64, _v: f64, _p: Point3) -> Color {
         Color::default()
     }
 }
 
+/// 纯色纹理，所有像素返回固定的反照率颜色
 pub struct SolidColor {
+    /// 固定的反照率颜色
     albedo: Color,
 }
 
 impl SolidColor {
+    /// 使用 RGB 分量创建纯色纹理
+    /// # 参数
+    /// * `red`   - 红色分量（范围 [0, 1]）
+    /// * `green` - 绿色分量（范围 [0, 1]）
+    /// * `blue`  - 蓝色分量（范围 [0, 1]）
     pub fn new(red: f64, green: f64, blue: f64) -> Self {
         Self {
             albedo: (Color::new(red, green, blue)),
         }
     }
 
+    /// 从颜色值创建纯色纹理
+    /// # 参数
+    /// * `albedo` - 反照率颜色
     pub fn from_color(albedo: Color) -> Self {
         Self { albedo }
     }
@@ -34,13 +50,22 @@ impl Texture for SolidColor {
     }
 }
 
+/// 棋盘格纹理，在 3D 空间中按坐标奇偶性交替显示两种子纹理
 pub struct CheckerTexture {
+    /// 缩放比例的倒数（1/scale），用于将世界坐标映射到棋盘格频率
     inv_scale: f64,
+    /// 棋盘格子（偶）所使用的纹理
     even: Arc<dyn Texture>,
+    /// 棋盘白格（奇）所使用的纹理
     odd: Arc<dyn Texture>,
 }
 
 impl CheckerTexture {
+    /// 创建棋盘格纹理
+    /// # 参数
+    /// * `scale` - 棋盘格尺寸（世界坐标单位）
+    /// * `even`  - 偶格子使用的纹理
+    /// * `odd`   - 奇格子使用的纹理
     pub fn new(scale: f64, even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> Self {
         Self {
             inv_scale: 1.0 / scale,
@@ -49,6 +74,11 @@ impl CheckerTexture {
         }
     }
 
+    /// 使用两种颜色创建棋盘格纹理（内部包装为 SolidColor 纹理）
+    /// # 参数
+    /// * `scale` - 棋盘格尺寸（世界坐标单位）
+    /// * `c1`    - 格子的第一种颜色
+    /// * `c2`    - 格子的第二种颜色
     pub fn from_another(scale: f64, c1: Color, c2: Color) -> Self {
         Self {
             inv_scale: 1.0 / scale,
@@ -74,11 +104,16 @@ impl Texture for CheckerTexture {
     }
 }
 
+/// 图像纹理，从磁盘加载图像文件并根据 UV 坐标采样像素颜色
 pub struct ImageTexture {
+    /// 内部图像数据
     image: RtwImage,
 }
 
 impl ImageTexture {
+    /// 从指定文件加载图像创建纹理
+    /// # 参数
+    /// * `filename` - 图像文件名（支持多种格式如 PNG、JPG）
     pub fn new(filename: &str) -> Self {
         Self {
             image: RtwImage::new(filename),
@@ -110,12 +145,18 @@ impl Texture for ImageTexture {
     }
 }
 
+/// 基于 Perlin 噪声的过程纹理，用于生成自然风格的花纹
 pub struct NoiseTexture {
+    /// Perlin 噪声实例
     noise: Perlin,
+    /// 空间缩放因子，控制噪声的频率
     scale: f64,
 }
 
 impl NoiseTexture {
+    /// 创建 Perlin 噪声纹理
+    /// # 参数
+    /// * `scale` - 空间缩放因子（值越小，噪声变化越平缓）
     pub fn new(scale: f64) -> Self {
         Self {
             noise: Perlin::new(),
