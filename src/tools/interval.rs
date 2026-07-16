@@ -79,3 +79,21 @@ impl Default for Interval {
         }
     }
 }
+
+impl std::ops::Add<f64> for Interval {
+    type Output = Interval;
+
+    /// 区间整体加上一个位移，返回新区间
+    fn add(self, displacement: f64) -> Interval {
+        Interval::new(self.min + displacement, self.max + displacement)
+    }
+}
+
+impl std::ops::Add<Interval> for f64 {
+    type Output = Interval;
+
+    /// f64 + Interval，交换律，委托给 Interval + f64
+    fn add(self, ival: Interval) -> Interval {
+        ival + self
+    }
+}

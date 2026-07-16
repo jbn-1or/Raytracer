@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::tools::{interval::Interval, ray::Ray, vector3::Point3};
+use crate::tools::{interval::Interval, ray::Ray, vector3::Point3, vector3::Vec3};
 
 /// 轴对齐包围盒（Axis-Aligned Bounding Box），由 x/y/z 三个区间的笛卡尔积定义
 #[derive(Clone, Copy)]
@@ -153,4 +153,26 @@ impl Aabb {
         y: Interval::UNIVERSE,
         z: Interval::UNIVERSE,
     };
+}
+
+impl std::ops::Add<Vec3> for Aabb {
+    type Output = Aabb;
+
+    /// 将包围盒整体平移 offset，返回新包围盒
+    fn add(self, offset: Vec3) -> Aabb {
+        Aabb::new(
+            self.x + offset.x(),
+            self.y + offset.y(),
+            self.z + offset.z(),
+        )
+    }
+}
+
+impl std::ops::Add<Aabb> for Vec3 {
+    type Output = Aabb;
+
+    /// Vec3 + Aabb，交换律，委托给 Aabb + Vec3
+    fn add(self, bbox: Aabb) -> Aabb {
+        bbox + self
+    }
 }
