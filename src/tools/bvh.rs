@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::tools::aabb::Aabb;
 use crate::tools::hittable::{HitRecord, Hittable};
@@ -8,15 +8,15 @@ use crate::tools::hittable_list::HittableList;
 use crate::tools::interval::Interval;
 use crate::tools::ray::Ray;
 /// 盒子比较函数类型
-type BoxCompareFn = dyn Fn(&Rc<dyn Hittable>, &Rc<dyn Hittable>) -> std::cmp::Ordering;
+type BoxCompareFn = dyn Fn(&Arc<dyn Hittable>, &Arc<dyn Hittable>) -> std::cmp::Ordering;
 
 /// BVH（包围体层次结构 / Bounding Volume Hierarchy）节点，实现加速光线求交的层次包围盒树
 /// 与 `hittable_list` 一样是一个容器，接收光线求交查询时通过层次包围盒快速筛选物体。
 pub struct BvhNode {
     /// 左子节点
-    left: Rc<dyn Hittable>,
+    left: Arc<dyn Hittable>,
     /// 右子节点（当物体数量为 1 时与左子节点指向相同物体）
-    right: Rc<dyn Hittable>,
+    right: Arc<dyn Hittable>,
     /// 当前节点的包围盒（包含左右子节点的合并包围盒）
     bbox: Aabb,
 }
@@ -26,12 +26,12 @@ impl BvhNode {
     /// 此构造函数创建物体的隐式拷贝，然后递归构建层次包围盒。
     /// 拷贝的生命周期仅在此构造函数内有效，仅需保留最终的层次结构。
     pub fn from_list(list: HittableList) -> Self {
-        let objects: Vec<Rc<dyn Hittable>> = list.objects.into_iter().map(Rc::from).collect();
+        let objects: Vec<Arc<dyn Hittable>> = list.objects.into_iter().map(Arc::from).collect();
         Self::from_objects(&objects, 0, objects.len())
     }
 
     /// 从物体切片递归构建 BVH 树
-    fn from_objects(objects: &[Rc<dyn Hittable>], start: usize, end: usize) -> Self {
+    fn from_objects(objects: &[Arc<dyn Hittable>], start: usize, end: usize) -> Self {
         // 构建对象跨度的包围盒
         let mut bbox = Aabb::EMPTY;
         for obj in objects[start..end].iter() {
@@ -61,15 +61,15 @@ impl BvhNode {
             (left, right)
         } else {
             // 三个及以上物体，排序后递归构建
-            let mut sorted_objects: Vec<Rc<dyn Hittable>> = objects[start..end].to_vec();
+            let mut sorted_objects: Vec<Arc<dyn Hittable>> = objects[start..end].to_vec();
             sorted_objects.sort_by(comparator);
 
             let mid = object_span / 2;
             let left_node = Self::from_objects(&sorted_objects, 0, mid);
             let right_node = Self::from_objects(&sorted_objects, mid, object_span);
             (
-                Rc::new(left_node) as Rc<dyn Hittable>,
-                Rc::new(right_node) as Rc<dyn Hittable>,
+                Arc::new(left_node) as Arc<dyn Hittable>,
+                Arc::new(right_node) as Arc<dyn Hittable>,
             )
         };
 
@@ -78,8 +78,8 @@ impl BvhNode {
 
     /// 通用盒子比较函数，比较两个物体在指定轴上的包围盒最小值
     fn box_compare(
-        a: &Rc<dyn Hittable>,
-        b: &Rc<dyn Hittable>,
+        a: &Arc<dyn Hittable>,
+        b: &Arc<dyn Hittable>,
         axis_index: usize,
     ) -> std::cmp::Ordering {
         let a_axis_interval = a.bounding_box().axis_interval(axis_index);
@@ -91,17 +91,17 @@ impl BvhNode {
     }
 
     /// X 轴比较函数
-    fn box_x_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> std::cmp::Ordering {
+    fn box_x_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> std::cmp::Ordering {
         Self::box_compare(a, b, 0)
     }
 
     /// Y 轴比较函数
-    fn box_y_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> std::cmp::Ordering {
+    fn box_y_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> std::cmp::Ordering {
         Self::box_compare(a, b, 1)
     }
 
     /// Z 轴比较函数
-    fn box_z_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> std::cmp::Ordering {
+    fn box_z_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> std::cmp::Ordering {
         Self::box_compare(a, b, 2)
     }
 }

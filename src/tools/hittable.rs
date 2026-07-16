@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::tools::aabb::Aabb;
@@ -59,7 +58,7 @@ impl HitRecord {
 
 /// 平移变换：将子物体沿 offset 向量平移
 pub struct Translate {
-    object: Rc<dyn Hittable>,
+    object: Arc<dyn Hittable>,
     offset: Vec3,
     bbox: Aabb,
 }
@@ -67,7 +66,7 @@ pub struct Translate {
 impl Translate {
     /// 创建一个平移变换对象
     /// # 参数`object`-待平移的子物体 `offset`-平移向量
-    pub fn new(object: Rc<dyn Hittable>, offset: Vec3) -> Self {
+    pub fn new(object: Arc<dyn Hittable>, offset: Vec3) -> Self {
         let bbox = object.bounding_box() + offset;
         Self {
             object,
@@ -102,7 +101,7 @@ impl Hittable for Translate {
 
 /// 绕 Y 轴旋转：将子物体绕 Y 轴旋转指定角度（角度制）
 pub struct RotateY {
-    object: Rc<dyn Hittable>,
+    object: Arc<dyn Hittable>,
     sin_theta: f64,
     cos_theta: f64,
     bbox: Aabb,
@@ -110,7 +109,7 @@ pub struct RotateY {
 
 impl RotateY {
     /// 创建一个绕 Y 轴旋转的变换对象（角度制）
-    pub fn new(object: Rc<dyn Hittable>, angle: f64) -> Self {
+    pub fn new(object: Arc<dyn Hittable>, angle: f64) -> Self {
         let radians = degrees_to_radians(angle);
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
@@ -201,7 +200,7 @@ impl Hittable for RotateY {
 }
 
 /// 可被光线击中的物体抽象接口
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     /// 检测光线是否与物体相交
     /// # 参数`r`-入射光线 `ray_tmin（max）`-光线参数 t 的最小（大）阈值 `rec`-储存HitRecord
     fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {

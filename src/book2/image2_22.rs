@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::tools::bvh::BvhNode;
@@ -113,8 +112,8 @@ pub fn render() {
         Point3::new(165.0, 330.0, 165.0),
         white.clone(),
     );
-    let box1 = RotateY::new(Rc::new(box1), 15.0);
-    let box1 = Translate::new(Rc::new(box1), Vec3::new(265.0, 0.0, 295.0));
+    let box1 = RotateY::new(Arc::new(box1), 15.0);
+    let box1 = Translate::new(Arc::new(box1), Vec3::new(265.0, 0.0, 295.0));
     world.add(Box::new(ConstantMedium::new(
         Arc::new(box1),
         0.01,
@@ -127,8 +126,8 @@ pub fn render() {
         Point3::new(165.0, 165.0, 165.0),
         white,
     );
-    let box2 = RotateY::new(Rc::new(box2), -18.0);
-    let box2 = Translate::new(Rc::new(box2), Vec3::new(130.0, 0.0, 65.0));
+    let box2 = RotateY::new(Arc::new(box2), -18.0);
+    let box2 = Translate::new(Arc::new(box2), Vec3::new(130.0, 0.0, 65.0));
     world.add(Box::new(ConstantMedium::new(
         Arc::new(box2),
         0.01,

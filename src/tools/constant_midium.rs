@@ -6,7 +6,7 @@ use crate::tools::aabb::Aabb;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::material::Material;
 use crate::tools::ray::Ray;
-use crate::tools::rtweekend::{random_double, INFINITY};
+use crate::tools::rtweekend::{INFINITY, random_double};
 use crate::tools::vector3::Vec3;
 
 /// 恒定密度介质（参与介质），模拟烟雾、雾、薄雾等体积效果

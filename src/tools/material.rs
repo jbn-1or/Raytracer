@@ -10,7 +10,7 @@ use crate::tools::texture::{SolidColor, Texture};
 use crate::tools::vector3::{Point3, Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
 /// 材质 trait，定义光线与表面交互时的散射行为
-pub trait Material {
+pub trait Material: Send + Sync {
     /// 产生散射光线（或说明它吸收了入射光线），若散射，说明光线应该衰减多少
     /// # 返回值：true 表示光线被散射，false 表示光线被吸收
     fn scatter(
