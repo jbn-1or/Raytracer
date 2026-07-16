@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::tools::aabb::Aabb;
 use crate::tools::hittable::{HitRecord, Hittable};
+use crate::tools::hittable_list::HittableList;
 use crate::tools::material::Material;
 use crate::tools::ray::Ray;
 use crate::tools::vector3::{Point3, Vec3, cross, dot, unit_vector};
@@ -127,4 +128,65 @@ impl Hittable for Quad {
     fn bounding_box(&self) -> Aabb {
         self.bbox
     }
+}
+
+/// 创建一个 3D 盒子（六个面），通过两个对角顶点 a 和 b 定义
+#[allow(non_snake_case)]
+pub fn create_box(a: Point3, b: Point3, mat: Arc<dyn Material>) -> HittableList {
+    let mut sides = HittableList::new();
+
+    // Construct the two opposite vertices with the minimum and maximum coordinates.
+    let min = Point3::new(
+        f64::min(a.x(), b.x()),
+        f64::min(a.y(), b.y()),
+        f64::min(a.z(), b.z()),
+    );
+    let max = Point3::new(
+        f64::max(a.x(), b.x()),
+        f64::max(a.y(), b.y()),
+        f64::max(a.z(), b.z()),
+    );
+
+    let dx = Vec3::new(max.x() - min.x(), 0.0, 0.0);
+    let dy = Vec3::new(0.0, max.y() - min.y(), 0.0);
+    let dz = Vec3::new(0.0, 0.0, max.z() - min.z());
+
+    sides.add(Box::new(Quad::new(
+        Point3::new(min.x(), min.y(), max.z()),
+        dx,
+        dy,
+        mat.clone(),
+    ))); // front
+    sides.add(Box::new(Quad::new(
+        Point3::new(max.x(), min.y(), max.z()),
+        -dz,
+        dy,
+        mat.clone(),
+    ))); // right
+    sides.add(Box::new(Quad::new(
+        Point3::new(max.x(), min.y(), min.z()),
+        -dx,
+        dy,
+        mat.clone(),
+    ))); // back
+    sides.add(Box::new(Quad::new(
+        Point3::new(min.x(), min.y(), min.z()),
+        dz,
+        dy,
+        mat.clone(),
+    ))); // left
+    sides.add(Box::new(Quad::new(
+        Point3::new(min.x(), max.y(), max.z()),
+        dx,
+        -dz,
+        mat.clone(),
+    ))); // top
+    sides.add(Box::new(Quad::new(
+        Point3::new(min.x(), min.y(), min.z()),
+        dx,
+        dz,
+        mat,
+    ))); // bottom
+
+    sides
 }
