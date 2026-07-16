@@ -181,6 +181,40 @@ fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
     r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
 
+/// 各向同性材质，主要用于恒定密度体（Volume）模拟
+/// 散射方向为均匀随机方向，不保留入射方向的信息
+pub struct Isotropic {
+    tex: Arc<dyn Texture>,
+}
+
+impl Isotropic {
+    /// 从颜色创建各向同性材质
+    pub fn new(albedo: Color) -> Self {
+        Self {
+            tex: Arc::new(SolidColor::from_color(albedo)),
+        }
+    }
+
+    /// 从纹理创建各向同性材质
+    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+        Self { tex: texture }
+    }
+}
+
+impl Material for Isotropic {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        *scattered = Ray::new_with_time(rec.p, random_unit_vector(), r_in.time());
+        *attenuation = self.tex.value(rec.u, rec.v, rec.p);
+        true
+    }
+}
+
 impl Material for Dielecric {
     /// 电介质材质的散射：根据入射角度和折射率决定反射或折射，模拟全内反射与菲涅尔效应
     /// # 返回值：始终返回 true（光线总是被散射，不会吸收）

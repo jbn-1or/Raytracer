@@ -44,8 +44,6 @@ fn main() {
     // book2::image2_18::render();
     // book2::image2_19::render();
     // book2::image2_20::render();
-    book2::image2_21::render();
-    // book2::image2_22::render();
-    // book2::image2_23::render();
-    // ...
+    // book2::image2_21::render();
+    book2::image2_22::render();
 }

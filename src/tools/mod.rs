@@ -15,3 +15,4 @@ pub mod rtweekend;
 pub mod sphere;
 pub mod texture;
 pub mod vector3;
+pub mod constant_midium;
