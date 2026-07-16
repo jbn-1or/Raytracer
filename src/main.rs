@@ -25,11 +25,7 @@ fn main() {
     // book1::image20::render();
     // book1::image21::render();
     // book1::image22::render();
-    // book1::image23::render();   // cam.aspect_ratio = 16.0 / 9.0;
-    // cam.image_width = 1600;
-    // cam.samples_per_pixel = 500;
-    // cam.max_depth = 100;
-    // time = 8min
+    // book1::image23::render();
 
     // book2::image2_1::render();
     // book2::image2_1_2::render();

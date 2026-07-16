@@ -11,7 +11,7 @@ use crate::tools::material::{DiffuseLight, Lambertian};
 use crate::tools::quad::Quad;
 use crate::tools::quad::create_box;
 use crate::tools::ray::Ray;
-use crate::tools::render_utils::{create_progress_bar, prepare_output_path, save_image};
+use crate::tools::render_utils::{create_progress_bar, prepare_output_path, render_parallel_gamma, save_image};
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::vector3::{Point3, Vec3};
 use image::{ImageBuffer, RgbImage};
@@ -151,19 +151,18 @@ pub fn render() {
 
     let progress = create_progress_bar((image_height * image_width) as u64);
 
+    let samples = cam.samples_per_pixel;
+    let max_depth = cam.max_depth;
+    let background = cam.background;
     // 渲染图片
-    for j in 0..image_height {
-        for i in 0..image_width {
-            let mut pixel_color: Color = Color::zero();
-            for _sample in 0..cam.samples_per_pixel {
-                let r = cam.get_ray(i, j);
-                pixel_color += ray_color(&r, cam.max_depth, &cam.background, &world);
-            }
-            let pixel = img.get_pixel_mut(i, j);
-            Color::write_color_gamma(pixel_color * pixel_samples_scale, pixel);
-            progress.inc(1);
+    render_parallel_gamma(&mut img, image_width, image_height, move |i, j| {
+        let mut pixel_color: Color = Color::zero();
+        for _sample in 0..samples {
+            let r = cam.get_ray(i, j);
+            pixel_color += ray_color(&r, max_depth, &background, &world);
         }
-    }
+        pixel_color * pixel_samples_scale
+    }, &progress);
 
     progress.finish();
 
