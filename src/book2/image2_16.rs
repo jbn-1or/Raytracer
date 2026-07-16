@@ -39,7 +39,6 @@ fn ray_color(r: &Ray, depth: u32, world: &dyn Hittable) -> Vec3 {
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 }
 
-#[allow(non_snake_case)]
 pub fn render() {
     let path = prepare_output_path("output/book2/image16.png");
 

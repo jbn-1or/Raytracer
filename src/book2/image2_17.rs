@@ -52,7 +52,6 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
     color_from_emission + color_from_scatter
 }
 
-#[allow(non_snake_case)]
 pub fn render() {
     let path = prepare_output_path("output/book2/image17.png");
 
