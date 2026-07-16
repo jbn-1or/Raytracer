@@ -25,7 +25,7 @@ fn main() {
     // book1::image20::render();
     // book1::image21::render();
     // book1::image22::render();
-    // book1::image23::render();
+    book1::image23::render();
 
     // book2::image2_1::render();
     // book2::image2_1_2::render();
@@ -45,5 +45,5 @@ fn main() {
     // book2::image2_19::render();
     // book2::image2_20::render();
     // book2::image2_21::render();
-    book2::image2_22::render();
+    // book2::image2_22::render();
 }

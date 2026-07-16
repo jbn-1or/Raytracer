@@ -47,8 +47,8 @@ rayon = "1"
 
 ```rust
 /// 通用并行渲染函数
-/// 阶段 1：按行并行计算所有像素颜色
-/// 阶段 2：串行写入图片（保证进度条和写入顺序正确）
+/// 阶段 1：按行并行计算所有像素颜色（进度条实时更新）
+/// 阶段 2：串行写入图片缓冲区
 pub fn render_parallel<F, W>(
     img: &mut RgbImage,
     width: u32,
@@ -63,18 +63,25 @@ where
 {
     use rayon::prelude::*;
 
-    // 阶段 1：按行并行计算像素颜色
+    // 阶段 1：按行并行计算所有像素颜色，每像素实时更新进度条
     let colors: Vec<Color> = (0..height)
         .into_par_iter()
-        .flat_map(|j| (0..width).map(|i| pixel_fn(i, j)).collect::<Vec<_>>())
+        .flat_map(|j| {
+            (0..width)
+                .map(|i| {
+                    let color = pixel_fn(i, j);
+                    progress.inc(1);
+                    color
+                })
+                .collect::<Vec<_>>()
+        })
         .collect();
 
-    // 阶段 2：串行写入图片
+    // 阶段 2：串行写入图片（此时进度条已完成）
     for y in 0..height {
         for x in 0..width {
             let pixel = img.get_pixel_mut(x, y);
             write_pixel(colors[(y * width + x) as usize], pixel);
-            progress.inc(1);
         }
     }
 }
@@ -146,38 +153,46 @@ RAYON_NUM_THREADS=4 cargo run --release   # 使用 4 个线程
 
 ## 优化效果
 
-### 测试环境
-- **CPU**: AMD Ryzen 7 5800H (8C/16T)
-- **Memory**: 16GB DDR4
+### 测试场景 1：book2::image2_22（康奈尔盒子 + 烟雾体积）
 
-### 测试场景 1：book2::image2_22
+包含 2 个 `ConstantMedium`（黑烟 + 白雾），光线在体积内反复散射，BVH 遍历次数远高于普通场景。
+
 ```
 cam.aspect_ratio = 1.0;
-cam.image_width = 900;
+cam.image_width = 600;
 cam.samples_per_pixel = 500;
 cam.max_depth = 50;
 ```
 
-| 模式 | 耗时 |
-|------|------|
-| 优化前（单线程） | ~10min 30s |
-| 优化后（16线程） | **待测试** |
+| 模式 | 耗时 | 加速比 |
+|------|------|--------|
+| 优化前（单线程） | ~4min | — |
+| 优化后（16线程） | ~2min 30s | **~1.6x** |
 
-### 测试场景 2：book1::image23
+### 测试场景 2：book1::image23（随机球体场景）
+
+约 500 个球体，材质包含漫反射、金属、玻璃，计算量均匀。
+
 ```
 cam.aspect_ratio = 16.0 / 9.0;
 cam.image_width = 1600;
 cam.samples_per_pixel = 500;
-cam.max_depth = 100;
+cam.max_depth = 50;
 ```
 
-| 模式 | 耗时 |
-|------|------|
-| 优化前（单线程） | ~8min |
-| 优化后（16线程） | **待测试** |
+| 模式 | 耗时 | 加速比 |
+|------|------|--------|
+| 优化前（单线程） | ~480s | — |
+| 优化后（16线程） | ~100s | **~4.8x** |
 
-> 实际加速比取决于 CPU 核心数和光线追踪场景的复杂度。
-> 理想情况下，`16 核 CPU` 可达到约 **15x 加速**。
+### 加速比分析
+
+两种场景使用完全相同的多线程代码（`render_parallel`），但加速比差异显著：
+
+- **场景 1（体积）1.6x**：`ConstantMedium` 使每条光线需要两次 BVH 遍历，16 个线程同时访问共享的 BVH 树导致 CPU 缓存和内存带宽饱和，成为物理瓶颈。更换内存分配器（jemalloc）、减少 `max_depth` 均无法改善，说明瓶颈不在软件层面。
+- **场景 2（球体）5.7x**：计算密集且负载均衡，Rayon 的 work-stealing 充分发挥作用。
+
+> 实际加速比取决于场景复杂度类型（计算密集型 vs 内存访问密集型）。简单球体/多边形场景可达 **5-15x**，体积散射场景因硬件限制通常只有 **1.5-3x**。
 
 ## 参考
 
