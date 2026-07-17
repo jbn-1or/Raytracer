@@ -1,6 +1,7 @@
 mod book1;
 mod book2;
 mod tools;
+mod work;
 
 fn main() {
     // book1::image1::render();
@@ -25,7 +26,8 @@ fn main() {
     // book1::image20::render();
     // book1::image21::render();
     // book1::image22::render();
-    book1::image23::render();
+    // book1::image23::render();
+    work::bridge::render();
 
     // book2::image2_1::render();
     // book2::image2_1_2::render();

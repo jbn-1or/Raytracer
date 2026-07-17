@@ -15,4 +15,7 @@ pub mod rtw_image;
 pub mod rtweekend;
 pub mod sphere;
 pub mod texture;
+pub mod triangle;
+pub mod scale;
+pub mod obj_loader;
 pub mod vector3;
