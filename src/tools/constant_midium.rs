@@ -21,7 +21,7 @@ pub struct ConstantMedium {
 }
 
 impl ConstantMedium {
-    /// 从边界物体、密度和纹理创建恒定介质
+    /// 从边界物体、密度和纹理创建恒定介质（dyn 版本）
     /// # 参数
     /// * `boundary` - 定义体积形状的边界物体
     /// * `density` - 介质密度（正值，越大越不透明）
@@ -31,6 +31,23 @@ impl ConstantMedium {
             boundary,
             neg_inv_density: -1.0 / density,
             phase_function: tex,
+        }
+    }
+
+    /// 从边界物体、密度和具体材质类型创建恒定介质（泛型版本）
+    /// # 参数
+    /// * `boundary` - 定义体积形状的边界物体
+    /// * `density` - 介质密度（正值，越大越不透明）
+    /// * `tex` - 控制散射颜色的具体材质类型
+    pub fn new_static<M: Material + 'static>(
+        boundary: Arc<dyn Hittable>,
+        density: f64,
+        tex: Arc<M>,
+    ) -> Self {
+        Self {
+            boundary,
+            neg_inv_density: -1.0 / density,
+            phase_function: tex as Arc<dyn Material>,
         }
     }
 }

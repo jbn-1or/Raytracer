@@ -7,9 +7,11 @@ use crate::tools::camera::Camera;
 use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
-use crate::tools::material::{Dielecric, Lambertian, Material, Metal};
+use crate::tools::material::{Dielecric, Lambertian, Metal};
 use crate::tools::ray::Ray;
-use crate::tools::render_utils::{create_progress_bar, prepare_output_path, render_parallel_gamma, save_image};
+use crate::tools::render_utils::{
+    create_progress_bar, prepare_output_path, render_parallel_gamma, save_image,
+};
 use crate::tools::rtweekend::{INFINITY, random_double, random_double_range};
 use crate::tools::sphere::Sphere;
 use crate::tools::vector3::{Point3, Vec3, unit_vector};
@@ -45,15 +47,14 @@ pub fn render() {
     // World
     let mut world: HittableList = HittableList::new();
 
-    // 地面：灰色朗伯材质
-    let ground_material: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    // 地面：灰色朗伯材质（静态分发：Lambertian<SolidColor> → Arc → dyn 仅在边界转换）
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
-        ground_material,
+        Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))),
     )));
 
-    // 随机生成小球
+    // 随机生成小球（直接用具体类型传入，无需 Arc<dyn Material> 中间变量）
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = random_double();
@@ -64,17 +65,14 @@ pub fn render() {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Arc<dyn Material>;
-
                 if choose_mat < 0.8 {
-                    // diffuse
+                    // diffuse — Lambertian<SolidColor>
                     let albedo = Color::new(random_double(), random_double(), random_double())
                         * Color::new(random_double(), random_double(), random_double());
-                    sphere_material = Arc::new(Lambertian::new(albedo));
                     world.add(Box::new(Sphere::new_with_material(
                         center,
                         0.2,
-                        sphere_material,
+                        Arc::new(Lambertian::new(albedo)),
                     )));
                 } else if choose_mat < 0.95 {
                     // metal
@@ -84,46 +82,40 @@ pub fn render() {
                         random_double_range(0.5, 1.0),
                     );
                     let fuzz = random_double_range(0.0, 0.5);
-                    sphere_material = Arc::new(Metal::new_with_fuzz(albedo, fuzz));
                     world.add(Box::new(Sphere::new_with_material(
                         center,
                         0.2,
-                        sphere_material,
+                        Arc::new(Metal::new_with_fuzz(albedo, fuzz)),
                     )));
                 } else {
                     // glass
-                    sphere_material = Arc::new(Dielecric::new(1.5));
                     world.add(Box::new(Sphere::new_with_material(
                         center,
                         0.2,
-                        sphere_material,
+                        Arc::new(Dielecric::new(1.5)),
                     )));
                 }
             }
         }
     }
 
-    // 三个大球
-    let material1: Arc<dyn Material> = Arc::new(Dielecric::new(1.5));
+    // 三个大球 — 直接传具体类型
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
-        material1,
+        Arc::new(Dielecric::new(1.5)),
     )));
 
-    let material2: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
-        material2,
+        Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1))),
     )));
 
-    let material3: Arc<dyn Material> =
-        Arc::new(Metal::new_with_fuzz(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
-        material3,
+        Arc::new(Metal::new_with_fuzz(Color::new(0.7, 0.6, 0.5), 0.0)),
     )));
 
     let bvh_node = BvhNode::from_list(world);
@@ -133,7 +125,7 @@ pub fn render() {
     // Camera
     let mut cam: Camera = Camera::new();
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 1200;
+    cam.image_width = 1600;
     cam.samples_per_pixel = 500;
     cam.max_depth = 50;
 
@@ -158,14 +150,20 @@ pub fn render() {
     let samples = cam.samples_per_pixel;
     let max_depth = cam.max_depth;
     // 渲染图片
-    render_parallel_gamma(&mut img, image_width, image_height, move |i, j| {
-        let mut pixel_color: Color = Color::zero();
-        for _sample in 0..samples {
-            let r = cam.get_ray(i, j);
-            pixel_color += ray_color(&r, max_depth, &world);
-        }
-        pixel_color * pixel_samples_scale
-    }, &progress);
+    render_parallel_gamma(
+        &mut img,
+        image_width,
+        image_height,
+        move |i, j| {
+            let mut pixel_color: Color = Color::zero();
+            for _sample in 0..samples {
+                let r = cam.get_ray(i, j);
+                pixel_color += ray_color(&r, max_depth, &world);
+            }
+            pixel_color * pixel_samples_scale
+        },
+        &progress,
+    );
 
     progress.finish();
 

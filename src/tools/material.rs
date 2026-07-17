@@ -30,29 +30,29 @@ pub trait Material: Send + Sync {
     }
 }
 
-/// 朗伯（漫反射）材质
-pub struct Lambertian {
-    /// 材质的纹理（兼容无纹理：颜色反照率）
-    tex: Arc<dyn Texture>,
+/// 朗伯（漫反射）材质（泛型版本，纹理类型静态分发）
+pub struct Lambertian<T: Texture = SolidColor> {
+    /// 材质的纹理
+    tex: Arc<T>,
 }
 
-impl Lambertian {
+impl Lambertian<SolidColor> {
     /// 从颜色创建朗伯材质（内部包装为 SolidColor 纹理）
-    /// # 参数`albedo`-材质的反照率颜色
     pub fn new(albedo: Color) -> Self {
         Self {
             tex: Arc::new(SolidColor::from_color(albedo)),
         }
     }
+}
 
+impl<T: Texture> Lambertian<T> {
     /// 从纹理创建朗伯材质
-    /// # 参数`texture`-材质的纹理
-    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+    pub fn new_with_texture(texture: Arc<T>) -> Self {
         Self { tex: texture }
     }
 }
 
-impl Material for Lambertian {
+impl<T: Texture> Material for Lambertian<T> {
     /// 计算朗伯材质的散射光线和衰减
     /// 散射方向 = 法线 + 随机单位向量；若方向退化为零向量则回退为法线方向
     /// # 返回值：始终返回 true（光线总是被散射，不会吸收）
@@ -86,13 +86,11 @@ pub struct Metal {
 
 impl Metal {
     /// 创建金属材质
-    /// # 参数`albedo`-材质的颜色
     pub fn new(albedo: Color) -> Self {
         Self { albedo, fuzz: 0.0 }
     }
 
     /// 创建带粗糙度的金属材质，`fuzz` 超出 [0,1] 时自动钳位到 1
-    /// # 参数`albedo`-材质的颜色 `fu`-粗糙度（0~1）
     pub fn new_with_fuzz(albedo: Color, fu: f64) -> Self {
         let mut fuz = fu;
         if fuz > 1.0 {
@@ -121,29 +119,29 @@ impl Material for Metal {
     }
 }
 
-/// 自发光材质（光源），向场景发射光线而不散射
-pub struct DiffuseLight {
+/// 自发光材质（泛型版本，纹理类型静态分发）
+pub struct DiffuseLight<T: Texture = SolidColor> {
     /// 材质的发光纹理
-    tex: Arc<dyn Texture>,
+    tex: Arc<T>,
 }
 
-impl DiffuseLight {
+impl DiffuseLight<SolidColor> {
     /// 从颜色创建自发光材质（内部包装为 SolidColor 纹理）
-    /// # 参数`emit`-发光颜色
     pub fn new(emit: Color) -> Self {
         Self {
             tex: Arc::new(SolidColor::from_color(emit)),
         }
     }
+}
 
+impl<T: Texture> DiffuseLight<T> {
     /// 从纹理创建自发光材质
-    /// # 参数`texture`-发光纹理
-    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+    pub fn new_with_texture(texture: Arc<T>) -> Self {
         Self { tex: texture }
     }
 }
 
-impl Material for DiffuseLight {
+impl<T: Texture> Material for DiffuseLight<T> {
     fn scatter(
         &self,
         _r_in: &Ray,
@@ -167,41 +165,40 @@ pub struct Dielecric {
 
 impl Dielecric {
     /// 创建电介质材质
-    /// # 参数`refraction_index`-折射率（通常 >1）
     pub fn new(refraction_index: f64) -> Self {
         Self { refraction_index }
     }
 }
 
 /// 使用 Schlick 近似计算菲涅尔反射率，决定反射与折射的能量分配
-/// # 参数`cosine`-入射角余弦值 `refraction_index`-相对折射率
 fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
     let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
     r0 = r0 * r0;
     r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
 
-/// 各向同性材质，主要用于恒定密度体（Volume）模拟
-/// 散射方向为均匀随机方向，不保留入射方向的信息
-pub struct Isotropic {
-    tex: Arc<dyn Texture>,
+/// 各向同性材质，主要用于恒定密度体（Volume）模拟（泛型版本，纹理类型静态分发）
+pub struct Isotropic<T: Texture = SolidColor> {
+    tex: Arc<T>,
 }
 
-impl Isotropic {
+impl Isotropic<SolidColor> {
     /// 从颜色创建各向同性材质
     pub fn new(albedo: Color) -> Self {
         Self {
             tex: Arc::new(SolidColor::from_color(albedo)),
         }
     }
+}
 
+impl<T: Texture> Isotropic<T> {
     /// 从纹理创建各向同性材质
-    pub fn new_with_texture(texture: Arc<dyn Texture>) -> Self {
+    pub fn new_with_texture(texture: Arc<T>) -> Self {
         Self { tex: texture }
     }
 }
 
-impl Material for Isotropic {
+impl<T: Texture> Material for Isotropic<T> {
     fn scatter(
         &self,
         r_in: &Ray,

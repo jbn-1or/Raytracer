@@ -31,14 +31,9 @@ pub struct Quad {
 }
 
 impl Quad {
-    /// 创建一个新的四边形
-    /// # 参数
-    /// * `Q` - 起始角点
-    /// * `u` - 第一条边向量
-    /// * `v` - 第二条边向量
-    /// * `mat` - 材质
+    /// 创建一个新的四边形（接受泛型材质类型，内部转为 dyn）
     #[allow(non_snake_case)]
-    pub fn new(Q: Point3, u: Vec3, v: Vec3, mat: Arc<dyn Material>) -> Self {
+    pub fn new<M: Material + 'static>(Q: Point3, u: Vec3, v: Vec3, mat: Arc<M>) -> Self {
         let n = cross(u, v);
         let normal = unit_vector(n);
         let d = dot(normal, Q);
@@ -49,7 +44,7 @@ impl Quad {
             u,
             v,
             w,
-            mat: Some(mat),
+            mat: Some(mat as Arc<dyn Material>),
             bbox: Aabb::default(),
             normal,
             d,
@@ -66,14 +61,7 @@ impl Quad {
     }
 
     /// 判断平面坐标 (a, b) 是否位于四边形内部，若是则设置 `rec` 的 UV 坐标
-    /// # 参数
-    /// * `a` - 沿 u 方向的平面坐标（对应 α）
-    /// * `b` - 沿 v 方向的平面坐标（对应 β）
-    /// * `rec` - 光线相交记录（仅击中时更新 u、v 值）
-    /// # 返回
-    /// * `true` - 点在四边形内部；`false` - 点在四边形外部
     fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
-        // 四边形内部要求坐标在 [0, 1] 范围内
         if !(0.0..=1.0).contains(&a) || !(0.0..=1.0).contains(&b) {
             return false;
         }
@@ -132,10 +120,9 @@ impl Hittable for Quad {
 
 /// 创建一个 3D 盒子（六个面），通过两个对角顶点 a 和 b 定义
 #[allow(non_snake_case)]
-pub fn create_box(a: Point3, b: Point3, mat: Arc<dyn Material>) -> HittableList {
+pub fn create_box<M: Material + 'static>(a: Point3, b: Point3, mat: Arc<M>) -> HittableList {
     let mut sides = HittableList::new();
 
-    // Construct the two opposite vertices with the minimum and maximum coordinates.
     let min = Point3::new(
         f64::min(a.x(), b.x()),
         f64::min(a.y(), b.y()),

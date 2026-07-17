@@ -5,7 +5,9 @@ use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
 use crate::tools::ray::Ray;
-use crate::tools::render_utils::{create_progress_bar, prepare_output_path, render_parallel_simple, save_image};
+use crate::tools::render_utils::{
+    create_progress_bar, prepare_output_path, render_parallel_simple, save_image,
+};
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::sphere::Sphere;
 use crate::tools::vector3::{Point3, Vec3, random_unit_vector, unit_vector};
@@ -55,14 +57,20 @@ pub fn render() {
     let samples = cam.samples_per_pixel;
     let max_depth = cam.max_depth;
     // 渲染图片
-    render_parallel_simple(&mut img, image_width, image_height, move |i, j| {
-        let mut pixel_color: Color = Color::zero();
-        for _sample in 0..samples {
-            let r = cam.get_ray(i, j);
-            pixel_color += ray_color(&r, max_depth, &world);
-        }
-        pixel_color * pixel_samples_scale
-    }, &progress);
+    render_parallel_simple(
+        &mut img,
+        image_width,
+        image_height,
+        move |i, j| {
+            let mut pixel_color: Color = Color::zero();
+            for _sample in 0..samples {
+                let r = cam.get_ray(i, j);
+                pixel_color += ray_color(&r, max_depth, &world);
+            }
+            pixel_color * pixel_samples_scale
+        },
+        &progress,
+    );
 
     progress.finish();
 

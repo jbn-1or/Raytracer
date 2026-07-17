@@ -12,7 +12,9 @@ use crate::tools::material::{DiffuseLight, Isotropic, Lambertian};
 use crate::tools::quad::Quad;
 use crate::tools::quad::create_box;
 use crate::tools::ray::Ray;
-use crate::tools::render_utils::{create_progress_bar, prepare_output_path, render_parallel_gamma, save_image};
+use crate::tools::render_utils::{
+    create_progress_bar, prepare_output_path, render_parallel_gamma, save_image,
+};
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::vector3::{Point3, Vec3};
 use image::{ImageBuffer, RgbImage};
@@ -58,6 +60,7 @@ pub fn render() {
     // World
     let mut world = HittableList::new();
 
+    // 静态分发材质：直接用具体类型构造，在传参边界处隐式转为 Arc<dyn Material>
     let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
     let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
     let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
@@ -107,6 +110,7 @@ pub fn render() {
     )));
 
     // 方块 1：长方体（旋转 15° 后平移），用黑色烟雾填充
+    // 泛型版本：ConstantMedium::new_static 接收具体类型 Isotropic<SolidColor>
     let box1 = create_box(
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(165.0, 330.0, 165.0),
@@ -114,7 +118,7 @@ pub fn render() {
     );
     let box1 = RotateY::new(Arc::new(box1), 15.0);
     let box1 = Translate::new(Arc::new(box1), Vec3::new(265.0, 0.0, 295.0));
-    world.add(Box::new(ConstantMedium::new(
+    world.add(Box::new(ConstantMedium::new_static(
         Arc::new(box1),
         0.01,
         Arc::new(Isotropic::new(Color::new(0.0, 0.0, 0.0))),
@@ -128,7 +132,7 @@ pub fn render() {
     );
     let box2 = RotateY::new(Arc::new(box2), -18.0);
     let box2 = Translate::new(Arc::new(box2), Vec3::new(130.0, 0.0, 65.0));
-    world.add(Box::new(ConstantMedium::new(
+    world.add(Box::new(ConstantMedium::new_static(
         Arc::new(box2),
         0.01,
         Arc::new(Isotropic::new(Color::new(1.0, 1.0, 1.0))),
@@ -168,14 +172,20 @@ pub fn render() {
     let max_depth = cam.max_depth;
     let background = cam.background;
     // 渲染图片
-    render_parallel_gamma(&mut img, image_width, image_height, move |i, j| {
-        let mut pixel_color: Color = Color::zero();
-        for _sample in 0..samples {
-            let r = cam.get_ray(i, j);
-            pixel_color += ray_color(&r, max_depth, &background, &world);
-        }
-        pixel_color * pixel_samples_scale
-    }, &progress);
+    render_parallel_gamma(
+        &mut img,
+        image_width,
+        image_height,
+        move |i, j| {
+            let mut pixel_color: Color = Color::zero();
+            for _sample in 0..samples {
+                let r = cam.get_ray(i, j);
+                pixel_color += ray_color(&r, max_depth, &background, &world);
+            }
+            pixel_color * pixel_samples_scale
+        },
+        &progress,
+    );
 
     progress.finish();
 

@@ -59,8 +59,7 @@ pub fn render_parallel<F, W>(
     pixel_fn: F,
     write_pixel: W,
     progress: &ProgressBar,
-)
-where
+) where
     F: Fn(u32, u32) -> Color + Send + Sync,
     W: Fn(Color, &mut Rgb<u8>),
 {
@@ -98,18 +97,10 @@ pub fn render_parallel_simple<F>(
     height: u32,
     pixel_fn: F,
     progress: &ProgressBar,
-)
-where
+) where
     F: Fn(u32, u32) -> Color + Send + Sync,
 {
-    render_parallel(
-        img,
-        width,
-        height,
-        pixel_fn,
-        |color, pixel| Color::write_color(color, pixel),
-        progress,
-    );
+    render_parallel(img, width, height, pixel_fn, Color::write_color, progress);
 }
 
 /// 标准并行渲染（带 gamma 校正）
@@ -121,8 +112,7 @@ pub fn render_parallel_gamma<F>(
     height: u32,
     pixel_fn: F,
     progress: &ProgressBar,
-)
-where
+) where
     F: Fn(u32, u32) -> Color + Send + Sync,
 {
     render_parallel(
@@ -130,7 +120,7 @@ where
         width,
         height,
         pixel_fn,
-        |color, pixel| Color::write_color_gamma(color, pixel),
+        Color::write_color_gamma,
         progress,
     );
 }

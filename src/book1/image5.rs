@@ -5,7 +5,9 @@ use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
 use crate::tools::ray::Ray;
-use crate::tools::render_utils::{create_progress_bar, prepare_output_path, render_parallel_simple, save_image};
+use crate::tools::render_utils::{
+    create_progress_bar, prepare_output_path, render_parallel_simple, save_image,
+};
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::sphere::Sphere;
 use crate::tools::vector3::{Point3, Vec3, unit_vector};
@@ -45,10 +47,16 @@ pub fn render() {
     let progress = create_progress_bar((image_height * image_width) as u64);
 
     // 渲染图片
-    render_parallel_simple(&mut img, image_width, image_height, |i, j| {
-        let r = cam.get_ray(i, j);
-        ray_color(&r, &world)
-    }, &progress);
+    render_parallel_simple(
+        &mut img,
+        image_width,
+        image_height,
+        |i, j| {
+            let r = cam.get_ray(i, j);
+            ray_color(&r, &world)
+        },
+        &progress,
+    );
 
     progress.finish();
 

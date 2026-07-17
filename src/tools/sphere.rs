@@ -22,7 +22,6 @@ pub struct Sphere {
 
 impl Sphere {
     /// 创建一个球体，若半径为负数则自动钳位为 0
-    /// # 参数`center`-球心坐标 `radius`-球体半径
     pub fn new(static_center: Point3, radius: f64) -> Self {
         let mut r = radius;
         if radius < 0.0 {
@@ -37,8 +36,7 @@ impl Sphere {
         }
     }
 
-    /// 创建一个带有材质的球体，若半径为负数则自动钳位为 0
-    /// # 参数`center`-球心坐标 `radius`-球体半径 `mat`-球体材质
+    /// 创建一个带有材质的球体（dyn 版本，兼容旧代码）
     pub fn new_with_material(static_center: Point3, radius: f64, mat: Arc<dyn Material>) -> Self {
         let mut r = radius;
         if radius < 0.0 {
@@ -53,8 +51,16 @@ impl Sphere {
         }
     }
 
-    /// 创建带运动模糊的球体，球心在 `center1` 到 `center2` 间随时间线性移动
-    /// # 参数`center1`-t=0 时的球心坐标 `center2`-t=1 时的球心坐标 `radius`-球体半径 `mat`-球体材质
+    /// 创建一个带有材质的球体（泛型版本，接受具体材质类型）
+    pub fn new_with_material_static<M: Material + 'static>(
+        static_center: Point3,
+        radius: f64,
+        mat: Arc<M>,
+    ) -> Self {
+        Self::new_with_material(static_center, radius, mat as Arc<dyn Material>)
+    }
+
+    /// 创建带运动模糊的球体（dyn 版本）
     pub fn new_move_with_material(
         center1: Point3,
         center2: Point3,
@@ -79,9 +85,7 @@ impl Sphere {
     /// p: 单位球（中心在原点、半径为 1）上的一个点
     /// 返回 (u, v)，均落在 [0, 1]
     pub fn get_sphere_uv(p: &Point3, u: &mut f64, v: &mut f64) {
-        // theta: 从 +Y 极点量起的极角，范围 [0, π]
         let theta = (-p.y()).acos();
-        // phi: 在 X-Z 赤道平面内绕 Y 轴的角，范围 (0, 2π]
         let phi = (-p.z()).atan2(p.x()) + PI;
 
         *u = phi / (2.0 * PI);
@@ -91,7 +95,6 @@ impl Sphere {
 
 impl Hittable for Sphere {
     /// 检测光线是否与球体相交，若相交则更新 HitRecord
-    /// # 参数`r`-入射光线 `ray_tmin（max）`-光线参数 t 的最小（大）阈值 `rec`-储存HitRecord
     fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
         let current_center: Point3 = self.center.at(r.time());
         let oc = current_center - r.origin();
@@ -107,7 +110,6 @@ impl Hittable for Sphere {
 
         let sqrtd = discriminant.sqrt();
 
-        // 寻找范围内最近的根
         let mut root = (half_b - sqrtd) / a;
         if root <= ray_tmin || root >= ray_tmax {
             root = (half_b + sqrtd) / a;
