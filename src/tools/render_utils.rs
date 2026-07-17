@@ -65,17 +65,13 @@ pub fn render_parallel<F, W>(
 {
     use rayon::prelude::*;
 
-    // 阶段 1：按行并行计算所有像素颜色，每像素实时更新进度条
+    // 阶段 1：按行并行计算所有像素颜色，每行结束后更新进度条
     let colors: Vec<Color> = (0..height)
         .into_par_iter()
         .flat_map(|j| {
-            (0..width)
-                .map(|i| {
-                    let color = pixel_fn(i, j);
-                    progress.inc(1);
-                    color
-                })
-                .collect::<Vec<_>>()
+            let row: Vec<Color> = (0..width).map(|i| pixel_fn(i, j)).collect();
+            progress.inc(width as u64);
+            row
         })
         .collect();
 
