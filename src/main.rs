@@ -4,5 +4,5 @@ mod tools;
 mod work;
 
 fn main() {
-    work::ball::render();
+    work::gold_stripe::render();
 }

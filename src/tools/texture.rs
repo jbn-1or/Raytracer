@@ -172,3 +172,49 @@ impl Texture for NoiseTexture {
             * (1.0 + (self.scale * _p.z() + 10.0 * self.noise.turb(&_p, 7)).sin())
     }
 }
+
+/// 金色条纹纹理：将 Perlin 噪声的灰度值反向映射到金色光谱
+/// 白(≈1.0) → 黑，灰(≈0.5) → 暗金，黑(≈0.0) → 亮金
+pub struct GoldStripeTexture {
+    /// Perlin 噪声实例
+    noise: Perlin,
+    /// 空间缩放因子，控制噪声的频率
+    scale: f64,
+}
+
+impl GoldStripeTexture {
+    /// 创建金色条纹纹理
+    /// # 参数
+    /// * `scale` - 空间缩放因子（值越小，噪声变化越平缓）
+    pub fn new(scale: f64) -> Self {
+        Self {
+            noise: Perlin::new(),
+            scale,
+        }
+    }
+}
+
+impl Texture for GoldStripeTexture {
+    fn value(&self, _u: f64, _v: f64, p: Point3) -> Color {
+        // 用湍流噪声 + sin 映射生成均匀分布的随机图案
+        let raw = self.noise.turb(&(self.scale * p), 5);
+        let n = (3.0 * raw).sin().abs();
+
+        let bright_gold = Color::new(2.0, 1.7, 0.3);
+        let dark_gold = Color::new(1.2, 0.7, 0.1);
+        let black = Color::new(0.0, 0.0, 0.0);
+
+        if n < 0.01{
+            // [0, 0.35]: 亮金 → 暗金（条纹）
+            let blend = n / 0.01;
+            (1.0 - blend) * bright_gold + blend * dark_gold
+        } else if n < 0.03 {
+            // [0.35, 0.55]: 暗金 → 黑（过渡带）
+            let blend = (n - 0.03) / 0.02;
+            (1.0 - blend) * dark_gold + blend * black
+        } else {
+            // [0.55, 1.0]: 纯黑（色块）
+            black
+        }
+    }
+}
