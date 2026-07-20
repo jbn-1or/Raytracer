@@ -70,7 +70,7 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
 fn sky_background(r: &Ray) -> Color {
     let unit_direction = unit_vector(r.direction());
     let a = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - a) * Color::new(0.5, 0.7, 0.8) + a * Color::new(0.05, 0.1, 0.20)
+    (1.0 - a) * Color::new(0.1, 0.1, 0.1) + a * Color::new(0.0, 0.0, 0.0)
 }
 
 pub fn render() {
@@ -96,8 +96,8 @@ pub fn render() {
     // 太阳：右上方橘黄色发光球体
     let sun = Arc::new(DiffuseLight::new(Color::new(10.0, 2.0, 0.5)));
     world.add(Box::new(Sphere::new_with_material(
-        Point3::new(-2.5, 3.0, -3.0),
-        0.2,
+        Point3::new(-4.5, 3.5, 1.0),
+        0.25,
         sun,
     )));
 
