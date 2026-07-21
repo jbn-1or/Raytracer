@@ -6,7 +6,7 @@ use crate::tools::camera::Camera;
 use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
-use crate::tools::material::{DiffuseLight, WaterMetal};
+use crate::tools::material::{DiffuseLight, GlassWithBlackCore, Lambertian, Metal};
 use crate::tools::quad::Quad;
 use crate::tools::ray::Ray;
 use crate::tools::render_utils::{
@@ -14,15 +14,14 @@ use crate::tools::render_utils::{
 };
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::sphere::Sphere;
-use crate::tools::texture::ImageTexture;
-use crate::tools::vector3::{Point3, Vec3};
+use crate::tools::vector3::{Point3, Vec3, unit_vector};
 use image::{ImageBuffer, RgbImage};
 
 /// 图像宽度（16:9）
-const IMAGE_WIDTH: u32 = 1600;
+const IMAGE_WIDTH: u32 = 400;
 
 /// 每像素采样数
-const SAMPLES: u32 = 200;
+const SAMPLES: u32 = 50;
 
 /// 最大反弹次数
 const MAX_DEPTH: u32 = 20;
@@ -65,52 +64,86 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
     color_from_emission + color_from_scatter
 }
 
-/// 纯黑背景
-fn black_sky(_r: &Ray) -> Color {
-    Color::new(0.0, 0.0, 0.0)
+/// 渐变背景（白到蓝）
+fn gradient_sky(r: &Ray) -> Color {
+    let unit = unit_vector(r.direction());
+    let a = 0.5 * (unit.y() + 1.0);
+    Color::new(1.0, 1.0, 1.0) * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
 }
 
 // ======================== 场景构建 ========================
 
 pub fn render() {
-    let path = prepare_output_path("output/work/earth_night.png");
+    let path = prepare_output_path("output/work/black_car_paint.png");
 
     // ============ 材质 ============
 
-    // 照片发光平面（NASA 全球夜光图）
-    let night_tex = Arc::new(ImageTexture::new("images/earth_night.jpg"));
-    let light_mat = Arc::new(DiffuseLight::new_with_texture(night_tex));
-    let water_surface = Arc::new(WaterMetal::new(
-        Color::new(1.0, 1.0, 1.0),
-        10.0, // 波纹空间频率
-        0.2,  // 波纹强度
+    // 纯黑内核的玻璃（黑色车漆）
+    let black_paint = Arc::new(GlassWithBlackCore::new(1.5));
+
+    // 暗灰色内核的玻璃（微微有点散射的黑色车漆）
+    let black_paint_soft = Arc::new(GlassWithBlackCore::new_with_core(
+        1.5,
+        Color::new(0.05, 0.05, 0.05),
     ));
-    let light = Arc::new(DiffuseLight::new(Color::new(1.0, 2.0, 2.0)));
+
+    // 灰色朗伯体作为对比
+    let gray_lambert = Arc::new(Lambertian::new(Color::new(0.3, 0.3, 0.3)));
+
+    // 金属球作为对比
+    let metal_chrome = Arc::new(Metal::new(Color::new(0.9, 0.9, 0.9)));
+
+    // 顶部光源
+    let light_mat = Arc::new(DiffuseLight::new(Color::new(4.0, 4.0, 4.0)));
+
+    // 地面材质
+    let ground_mat = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.8)));
 
     // ============ 世界 ============
     let mut world = HittableList::new();
 
-    // ---- 发光照片平面（正面朝向相机） ----
-    world.add(Box::new(Quad::new(
-        Point3::new(-1.9, -1.8, 0.0),
-        Vec3::new(4.0, 0.0, 0.0),
-        Vec3::new(0.0, 2.0, 0.0),
-        light_mat,
-    )));
-
-    // 大平面镜（水面）
-    world.add(Box::new(Quad::new(
-        Point3::new(-10.0, -1.0, -10.0),
-        Vec3::new(20.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 20.0),
-        water_surface,
-    )));
-
-    // 球光源
+    // 大地面
     world.add(Box::new(Sphere::new_with_material(
-        Point3::new(-2.0, 2.0, 2.0),
+        Point3::new(0.0, -100.5, -2.0),
+        100.0,
+        ground_mat,
+    )));
+
+    // 一圈展示球体
+    // 黑色车漆球（纯黑内核）
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(-1.8, -0.5, -2.0),
         1.0,
-        light,
+        black_paint.clone(),
+    )));
+
+    // 黑色车漆球（暗灰内核，更有层次感）
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(0.0, -0.5, -2.0),
+        1.0,
+        black_paint_soft,
+    )));
+
+    // 灰色朗伯体对比球
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(1.8, -0.5, -2.0),
+        1.0,
+        gray_lambert,
+    )));
+
+    // 金属对比球
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(3.6, -0.5, -2.0),
+        1.0,
+        metal_chrome,
+    )));
+
+    // 顶部矩形面光源
+    world.add(Box::new(Quad::new(
+        Point3::new(-2.0, 6.0, -4.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 2.0),
+        light_mat,
     )));
 
     // ============ 相机 ============
@@ -122,9 +155,8 @@ pub fn render() {
 
     cam.vfov = VFOV;
 
-    // 相机正对照片平面中心
-    cam.lookfrom = Point3::new(0.0, -0.99, 4.0);
-    cam.lookat = Point3::new(0.0, -0.99, 0.0);
+    cam.lookfrom = Point3::new(2.0, 2.0, 5.0);
+    cam.lookat = Point3::new(0.0, -0.5, -2.0);
     cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.0;
@@ -149,7 +181,7 @@ pub fn render() {
             let mut pixel_color: Color = Color::zero();
             for _sample in 0..samples {
                 let r = cam.get_ray(i, j);
-                let bg = black_sky(&r);
+                let bg = gradient_sky(&r);
                 pixel_color += ray_color(&r, max_depth, &bg, &world);
             }
             pixel_color * pixel_samples_scale

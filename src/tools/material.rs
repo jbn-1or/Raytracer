@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::tools::color::Color;
 use crate::tools::hittable::HitRecord;
+use crate::tools::perlin::Perlin;
 use crate::tools::ray::Ray;
 use crate::tools::rtweekend::random_double;
 use crate::tools::texture::{SolidColor, Texture};
@@ -114,6 +115,70 @@ impl Material for Metal {
         let mut reflected = reflect(r_in.direction(), rec.normal);
         reflected = unit_vector(reflected) + (self.fuzz * random_unit_vector());
         *scattered = Ray::new_with_time(rec.p, reflected, r_in.time());
+        *attenuation = self.albedo;
+        dot(scattered.direction(), rec.normal) > 0.0
+    }
+}
+
+/// 波纹水面材质：在理想镜面反射的基础上，用 Perlin 噪声扰动法线
+/// 产生空间连续的波纹扭曲效果（反射仍然清晰，但形状被扭曲）
+pub struct WaterMetal {
+    /// 材质的反照率（颜色）
+    albedo: Color,
+    /// 波纹空间频率（值越大，波纹越密集）
+    wave_scale: f64,
+    /// 波纹强度（类似 Metal 的 fuzz，但扰动是空间连续的）
+    wave_strength: f64,
+    /// Perlin 噪声实例，用于生成空间连续的扰动
+    noise: Perlin,
+}
+
+impl WaterMetal {
+    /// 创建波纹水面材质
+    /// # 参数
+    /// * `albedo` - 反照率颜色（通常为白色以反射全部光线）
+    /// * `wave_scale` - 波纹空间频率（推荐 5.0 ~ 20.0）
+    /// * `wave_strength` - 波纹强度（类似 fuzz，推荐 0.05 ~ 0.3）
+    pub fn new(albedo: Color, wave_scale: f64, wave_strength: f64) -> Self {
+        Self {
+            albedo,
+            wave_scale,
+            wave_strength,
+            noise: Perlin::new(),
+        }
+    }
+}
+
+impl Material for WaterMetal {
+    /// 计算波纹水面的散射光线和衰减
+    ///
+    /// 核心思想：用 Perlin 噪声替代 Metal 中的纯随机 fuzz，
+    /// 在击中点 p 的 XZ 方向采样两个噪声值，构造一个空间连续的扰动向量，
+    /// 叠加到理想反射方向，产生波纹扭曲效果。
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        let reflected = reflect(r_in.direction(), rec.normal);
+
+        // 在击中点 p 的 XZ 平面采样 Perlin 噪声，构造空间连续的扰动
+        // 采样点偏移确保两个方向获得不同的噪声值
+        let nx = self.noise.noise(&(self.wave_scale * rec.p));
+        let nz = self
+            .noise
+            .noise(&(self.wave_scale * (rec.p + Vec3::new(7.31, 3.17, 0.0))));
+        let perturbation = Vec3::new(nx, 0.0, nz) * self.wave_strength;
+
+        let mut scattered_dir = unit_vector(reflected) + perturbation;
+        // 如果扰动导致方向退化为零向量，回退到理想反射方向
+        if scattered_dir.near_zero() {
+            scattered_dir = reflected;
+        }
+
+        *scattered = Ray::new_with_time(rec.p, scattered_dir, r_in.time());
         *attenuation = self.albedo;
         dot(scattered.direction(), rec.normal) > 0.0
     }
@@ -242,5 +307,77 @@ impl Material for Dielecric {
 
         *scattered = Ray::new_with_time(rec.p, direction, r_in.time());
         true
+    }
+}
+
+/// 复合材料：外层玻璃 + 内层黑色朗伯体，模拟黑色车漆（Clear Coat）效果
+///
+/// - 外表面命中：正常玻璃折射 + 菲涅尔反射，衰减为白色
+/// - 内表面命中：黑色朗伯体漫反射，衰减为 core_color（极暗灰色），模拟色漆层吸收
+pub struct GlassWithBlackCore {
+    /// 玻璃折射率，默认 1.5
+    refraction_index: f64,
+    /// 内核颜色（黑色朗伯体的反照率），默认极暗灰
+    core_color: Color,
+}
+
+impl GlassWithBlackCore {
+    /// 创建新材料，折射率默认为 1.5（典型玻璃折射率），内核为纯黑
+    pub fn new(refraction_index: f64) -> Self {
+        Self {
+            refraction_index,
+            core_color: Color::new(0.0, 0.0, 0.0),
+        }
+    }
+
+    /// 创建带自定义内核颜色的复合材料
+    pub fn new_with_core(refraction_index: f64, core_color: Color) -> Self {
+        Self {
+            refraction_index,
+            core_color,
+        }
+    }
+}
+
+impl Material for GlassWithBlackCore {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        if rec.front_face {
+            // 外表面：和 Dielecric 一样的折射/菲涅尔反射行为
+            *attenuation = Color::new(1.0, 1.0, 1.0);
+            let ri = 1.0 / self.refraction_index;
+
+            let unit_direction = unit_vector(r_in.direction());
+            let cos_theta = f64::min(dot(-unit_direction, rec.normal), 1.0);
+            let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+            let cannot_refract = ri * sin_theta > 1.0;
+            let direction: Vec3 = if cannot_refract || reflectance(cos_theta, ri) > random_double()
+            {
+                reflect(unit_direction, rec.normal)
+            } else {
+                refract(unit_direction, rec.normal, ri)
+            };
+
+            *scattered = Ray::new_with_time(rec.p, direction, r_in.time());
+            true
+        } else {
+            // 内表面：黑色朗伯体漫反射行为（类似 Lambertian 材质）
+            *attenuation = self.core_color;
+
+            let mut scatter_direction = rec.normal + random_unit_vector();
+
+            if scatter_direction.near_zero() {
+                scatter_direction = rec.normal;
+            }
+
+            *scattered = Ray::new_with_time(rec.p, scatter_direction, r_in.time());
+            true
+        }
     }
 }
