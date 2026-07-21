@@ -20,8 +20,16 @@ impl<H: Hittable> Scale<H> {
         assert!(scale > 0.0, "Scale factor must be positive");
         let inner = object.bounding_box();
         let bbox = Aabb::new_with_points(
-            Point3::new(inner.x.min * scale, inner.y.min * scale, inner.z.min * scale),
-            Point3::new(inner.x.max * scale, inner.y.max * scale, inner.z.max * scale),
+            Point3::new(
+                inner.x.min * scale,
+                inner.y.min * scale,
+                inner.z.min * scale,
+            ),
+            Point3::new(
+                inner.x.max * scale,
+                inner.y.max * scale,
+                inner.z.max * scale,
+            ),
         );
         Self {
             object,
@@ -47,7 +55,7 @@ impl<H: Hittable> Hittable for Scale<H> {
         }
 
         // 将交点变换回世界空间
-        rec.p = rec.p * self.scale;
+        rec.p *= self.scale;
 
         // 各向同性缩放下法线方向不变，只需重新归一化
         rec.normal = unit_vector(rec.normal);

@@ -60,8 +60,7 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
         return color_from_emission;
     }
 
-    let color_from_scatter =
-        attenuation * ray_color(&scattered, depth - 1, background, world);
+    let color_from_scatter = attenuation * ray_color(&scattered, depth - 1, background, world);
 
     color_from_emission + color_from_scatter
 }

@@ -204,7 +204,7 @@ impl Texture for GoldStripeTexture {
         let dark_gold = Color::new(1.2, 0.7, 0.1);
         let black = Color::new(0.0, 0.0, 0.0);
 
-        if n < 0.01{
+        if n < 0.01 {
             // [0, 0.35]: 亮金 → 暗金（条纹）
             let blend = n / 0.01;
             (1.0 - blend) * bright_gold + blend * dark_gold

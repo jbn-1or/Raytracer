@@ -19,7 +19,6 @@ use crate::tools::texture::CheckerTexture;
 use crate::tools::vector3::{Point3, Vec3, unit_vector};
 use image::{ImageBuffer, RgbImage};
 
-
 /// 图像宽度（16:9）
 const IMAGE_WIDTH: u32 = 800;
 
@@ -65,8 +64,7 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
         return color_from_emission;
     }
 
-    let color_from_scatter =
-        attenuation * ray_color(&scattered, depth - 1, background, world);
+    let color_from_scatter = attenuation * ray_color(&scattered, depth - 1, background, world);
 
     color_from_emission + color_from_scatter
 }
@@ -119,38 +117,70 @@ pub fn render() {
     world.add(Box::new(Sphere::new_with_material(
         Point3::new(0.2, 0.2, 0.5),
         0.3,
-        ball
+        ball,
     )));
 
     // ---- 朗伯球
 
     // 镜子
     world.add(Box::new(Quad::new(
-        Point3::new(1.5 * CHECKER_SCALE, 1.5 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
-        Vec3::new(0.0 * CHECKER_SCALE, -3.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
+        Point3::new(
+            1.5 * CHECKER_SCALE,
+            1.5 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
+        Vec3::new(
+            0.0 * CHECKER_SCALE,
+            -3.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
         Vec3::new(0.0, 0.0, 10.0 * CHECKER_SCALE),
-        mirror.clone()
+        mirror.clone(),
     )));
 
     world.add(Box::new(Quad::new(
-        Point3::new(1.5 * CHECKER_SCALE, 1.5 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
-        Vec3::new(-3.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
+        Point3::new(
+            1.5 * CHECKER_SCALE,
+            1.5 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
+        Vec3::new(
+            -3.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
         Vec3::new(0.0, 0.0, 10.0 * CHECKER_SCALE),
-        mirror.clone()
+        mirror.clone(),
     )));
 
     world.add(Box::new(Quad::new(
-        Point3::new( -1.5 * CHECKER_SCALE, -1.5 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
-        Vec3::new(3.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
+        Point3::new(
+            -1.5 * CHECKER_SCALE,
+            -1.5 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
+        Vec3::new(
+            3.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
         Vec3::new(0.0, 0.0, 10.0 * CHECKER_SCALE),
-        mirror.clone()
+        mirror.clone(),
     )));
 
     world.add(Box::new(Quad::new(
-        Point3::new( -1.5 * CHECKER_SCALE, -1.5 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
-        Vec3::new(0.0 * CHECKER_SCALE, 3.0 * CHECKER_SCALE, 0.0 * CHECKER_SCALE),
+        Point3::new(
+            -1.5 * CHECKER_SCALE,
+            -1.5 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
+        Vec3::new(
+            0.0 * CHECKER_SCALE,
+            3.0 * CHECKER_SCALE,
+            0.0 * CHECKER_SCALE,
+        ),
         Vec3::new(0.0, 0.0, 10.0 * CHECKER_SCALE),
-        mirror
+        mirror,
     )));
 
     // ============ BVH 加速 ============

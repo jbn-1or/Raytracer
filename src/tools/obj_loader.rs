@@ -19,12 +19,12 @@ pub fn load_obj(path: &str, mat: Arc<dyn Material>) -> Vec<Box<dyn Hittable>> {
     let (models, _materials) = tobj::load_obj(
         path,
         &tobj::LoadOptions {
-            triangulate: true,          // 将多边形面三角化
-            single_index: true,         // 使用单索引缓存
+            triangulate: true,  // 将多边形面三角化
+            single_index: true, // 使用单索引缓存
             ..Default::default()
         },
     )
-    .expect(&format!("Failed to load OBJ file: {}", path));
+    .unwrap_or_else(|_| panic!("Failed to load OBJ file: {}", path));
 
     let mut triangles: Vec<Box<dyn Hittable>> = Vec::new();
 
@@ -104,7 +104,7 @@ pub fn load_obj_transformed(
             ..Default::default()
         },
     )
-    .expect(&format!("Failed to load OBJ file: {}", path));
+    .unwrap_or_else(|_| panic!("Failed to load OBJ file: {}", path));
 
     let radians = rotate_y_deg.to_radians();
     let sin_theta = radians.sin();

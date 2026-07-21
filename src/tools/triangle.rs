@@ -106,7 +106,7 @@ impl Hittable for Triangle {
         let u = dot(tvec, pvec) * inv_det;
 
         // 重心坐标 u 不在 [0, 1] 内则无交点
-        if u < 0.0 || u > 1.0 {
+        if !(0.0..=1.0).contains(&u) {
             return false;
         }
 
