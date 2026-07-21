@@ -4,5 +4,5 @@ mod tools;
 mod work;
 
 fn main() {
-    work::gold_stripe::render();
+    work::earth_night::render();
 }
