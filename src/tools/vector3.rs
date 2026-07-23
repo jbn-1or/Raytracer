@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 use crate::tools::rtweekend::{random_double, random_double_range};
@@ -193,13 +192,6 @@ impl Div<f64> for Vec3 {
 
     fn div(self, t: f64) -> Self::Output {
         (1.0 / t) * self
-    }
-}
-
-// Display: 打印为 "e0 e1 e2"
-impl fmt::Display for Vec3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {} {}", self.e[0], self.e[1], self.e[2])
     }
 }
 

@@ -1,187 +1,213 @@
-![](./doc/assets/image-raytracing.png)
+# 🎨 Raytracer
 
-# Summer-Ray-Tracer
+> 基于 Rust 实现的光线追踪渲染器
 
-> SJTU ACM Honors Class 2026 Ray Tracer Project with Rust!
+基于 [*Ray Tracing In One Weekend*](https://raytracing.github.io/) 系列书籍实现，使用 Rust 语言从零构建的物理光线追踪渲染器。
 
-**Before you start, please read this README carefully**, and there is no useless information in this document.
+## ✨ 特性
 
-### Introduction
+- ✅ **完整实现 Book 1 & Book 2** — 涵盖漫反射、金属、玻璃（电介质）、体积介质、BVH 加速、纹理映射、康奈尔盒子等全部章节
+- 🧵 **多线程并行加速** — 基于 [Rayon](https://docs.rs/rayon/) 实现按行并行渲染，充分利用多核 CPU
+- ⚡ **静态分发优化** — 泛型材质与变换消除虚表调用开销，提升渲染效率
+- 📦 **3D 模型加载** — 支持 `.obj` 模型文件，使用 Möller-Trumbore 算法实现三角形求交
+- 🌍 **环境光照** — 基于图像的环境光源（HDR 环境照明）
+- 🎨 **高级材质**
+  - `GlassWithBlackCore` — 模拟汽车黑色烤漆（清漆层 + 深色底漆）
+  - `WaterMetal` — Perlin 噪声驱动的波纹水面材质
 
-Briefly, you need to build a toy ray tracer in this project with the Rust language.
+## 📁 项目结构
 
-### Where can you Learn about Ray Tracing?
-
-Our project is based on the [***Ray Tracing In One Weekend***](https://raytracing.github.io/) book series, containing three books, which is a great resource for beginners to learn about ray tracing.
-
-Most of your jobs are just reading and trying to understand the books, and implementing the books' C++ code in Rust. (That sounds so easy, right?)
-
-### Quick Start
-
-> If you are already familiar with Rust, you can dive directly into the [Quick Start](#quick-start) section below. Otherwise, we recommend reading the [Rust Language](#rust-language) section first to get started.
-
-#### Rust Installation
-Rust is a modern programming language with a convenient version control tool called `rustup` and a powerful package manager called `cargo`. Simply follow the instructions on [Rust official website](https://www.rust-lang.org/tools/install) for their installation. You may also use Rust IDEs (we recommend [RustRover](https://www.jetbrains.com/rust/)) to manage your Rust projects.
-
-#### The First Output
-We have already implemented the first image output of the first book in `main.rs`, so you can just run the following commands to see the first output image (or simply click the `Run` button in your IDE):
-- `cargo run`
-
-This will automatically set up the environment and compile the code, then run the ray tracer to generate the first image in `output/book1/image1.png`.
-
-#### GitHub Actions
-You need to share your code on GitHub, and we will use GitHub Actions to automatically run your code and generate the output images for checking. You can find the configuration file in `.github/workflows/run.yml`. This file will be automatically executed when you push your code onto GitHub with an arbitrary tag.
-
-Following are instructions on how to create a tag, push your code, and see the result in GitHub Actions (we use RustRover as an example):
-
-1. Enable GitHub Actions in your repository first.
-2. Create a tag for your local commit.
-![Create a tag for a local commit](./doc/assets/add_tag.png)
-3. Push the code together with the tag.
-![Push the code together with the tag](./doc/assets/push_tag.png)
-4. Check the GitHub Actions page to see if your code runs successfully.
-![GitHub Actions page](./doc/assets/github_actions.png)
-5. Download the output images from the `Artifacts` section.
-![Download the output images](./doc/assets/download_output.png)
-
-Or you can use the command line to create a tag and push it to GitHub:
-```bash
-git commit -m "Your commit message"
-git tag -a your_tag_name -m "Your tag message"  # Create a tag for the current commit
-git tag # List all tags
-git push origin your_tag_name  # Push the tag to GitHub
-git push origin main  --follow-tags  # Push the main branch and all tags to GitHub
-git push origin --tags  # Push all tags to GitHub, if you pushed the code without tags before
-```
-
-**Tag naming convention:** We recommend using the format `book<book#>-image<image#>`, e.g., `book1-image1`, `book1-image2`, `book2-image3`. For final scene or bonus work, you may use tags like `final-scene`, `bonus-rendering`, etc. Avoid reusing tags that already exist in the repository (run `git tag` to check).
-
-### The Framework of the Project
 ```
 .
-├── Cargo.lock
-├── Cargo.toml
-├── doc
-├── .github
-│   └── workflows
-│       └── run.yml
-├── .gitignore
-├── LICENSE
-├── output
-│   ├── book1
-│   │   └── image1.jpg
-│   ├── book2
-│   ├── book3
-│   └── works
-├── src
-│   └── main.rs
-├── assets
-├── README.md
-└── rust-toolchain.toml
+├── src/
+│   ├── main.rs              # 程序入口
+│   ├── book1/               # Book 1 章节实现（20 个场景）
+│   ├── book2/               # Book 2 章节实现（18 个场景）
+│   ├── tools/               # 核心渲染工具模块
+│   │   ├── vector3.rs       # 3D 向量
+│   │   ├── ray.rs           # 光线
+│   │   ├── camera.rs        # 相机
+│   │   ├── sphere.rs        # 球体
+│   │   ├── quad.rs          # 四边形
+│   │   ├── triangle.rs      # 三角形（Möller-Trumbore）
+│   │   ├── material.rs      # 材质系统（漫反射/金属/玻璃/车漆/水面等）
+│   │   ├── texture.rs       # 纹理（纯色/棋盘格/图像）
+│   │   ├── bvh.rs           # BVH 加速结构
+│   │   ├── aabb.rs          # 轴对齐包围盒
+│   │   ├── perlin.rs        # Perlin 噪声
+│   │   ├── obj_loader.rs    # .obj 模型加载器
+│   │   ├── hittable.rs      # 可命中物体 trait
+│   │   ├── hittable_list.rs # 物体列表
+│   │   └── render_utils.rs  # 并行渲染工具函数
+│   └── work/                # 最终场景作品
+│       ├── final_scene.rs   # 最终场景
+│       ├── sportcar.rs      # 跑车
+│       ├── earth_night.rs   # 地球夜景
+│       ├── glass_tower.rs   # 玻璃塔
+│       ├── black_car_paint.rs # 黑色车漆展示
+│       ├── gold_stripe.rs   # 金条纹球
+│       ├── bridge.rs        # 桥梁场景
+│       └── ball.rs          # 球体场景
+├── doc/                     # 文档与 Bonus 说明
+├── Cargo.toml               # 项目清单
+└── rust-toolchain.toml      # Rust 工具链版本
 ```
 
-We strongly recommend you to keep this framework to build your project, as you can see, this framework is already simple enough, and you can add your own code in the `src` folder.
+## 🧩 模块依赖关系
 
-- `doc`: A folder to contain your report
-- `output`: A folder to contain your output images
-  - Each book has its own folder, which contains all the images shown in the chapters but should be generated by your own ray tracer
-  - This folder should not be uploaded to `Github`, as it may be too large or change too frequently, so it should be added to `.gitignore`
-- `.github/workflows/run.yml`: This file is used to run your code in `Github Actions`, which is a CI/CD tool.
-  By the way, `output` folder can be generated automatically by `Github Actions`.
-- `src`: This folder contains you main code
-- `assets`: If you want to import some 3D models or textures, you can put them in this folder
-- `rust-toolchain.toml`: Specify the Rust version for your project. Do not forget to add this file to your project, or you may not be able to compile your code
+`src/tools/` 内部模块的分层依赖关系如下。箭头方向表示 `use` 引用关系（A → B 表示 A 引用了 B）。
 
-### Rust Language
+```mermaid
+graph TB
+    L0["🔹 基础类型层<br/>vector3 / rtweekend / interval / color<br/><br/>无内部依赖"]
 
-#### Grammar Study
+    L1["🔹 核心抽象层<br/>ray / aabb<br/>hittable（trait + HitRecord + Translate / RotateY）<br/><br/>依赖: vector3, rtweekend, interval"]
 
-This is probably your first time to use Rust, so there are some resources for you to learn Rust:
+    L2["🔹 纹理 / 材质层<br/>perlin / rtw_image<br/>texture（SolidColor / CheckerTexture / ImageTexture）<br/>material（Lambertian / Metal / Dielecric / DiffuseLight<br/>　Isotropic / GlassWithBlackCore / WaterMetal）<br/><br/>依赖: vector3, rtweekend, interval, color, ray"]
 
-- [*Rust Programming Language*](https://doc.rust-lang.org/book/title-page.html) is the most used book for a beginner
-  - [*Rust 程序设计语言 简体中文版*](https://kaisery.github.io/trpl-zh-cn/title-page.html), the Chinese translation
-- [*Rust 语言圣经*](https://course.rs/about-book.html)
-- [*The Cargo Book*](https://doc.rust-lang.org/cargo/index.html)
-- [*Rust By Example*](https://doc.rust-lang.org/rust-by-example/index.html)
-- [*Rust Nomicon*](https://doc.rust-lang.org/nomicon/index.html) is for advanced users. E.g. you can learn how to write unsafe code in Rust
+    L3["🔹 几何体层（并列实现 Hittable）<br/>sphere / quad<br/>triangle（Möller-Trumbore）<br/>constant_midium<br/><br/>依赖: hittable, aabb, material, vector3, interval"]
 
-#### Something you should know about Rust
+    L4["🔹 场景组织层<br/>hittable_list / bvh（BVH 加速结构）<br/><br/>依赖: hittable, aabb, interval<br/>bvh 额外依赖: ray, hittable_list"]
 
-- `Module` instead of `include`
-- `Trait` instead of `inheritance`
-- Syntactically similar to C++
-- Well designed, ensuring memory safe without garbage collection
-- Strict compile-time check
-- Ownership, lifetime, borrow checker, smart pointers...
-- Hard to learn...
+    L5["🔹 变换 / 加载层<br/>scale（缩放变换）<br/>obj_loader（.obj 模型加载）<br/><br/>scale 依赖: hittable, aabb, vector3<br/>obj_loader 依赖: hittable, triangle, material, vector3"]
 
-### Tasks
+    L6["🔹 渲染工具层（独立于主链）<br/>camera（相机 / 光线工厂）<br/>render_utils（并行渲染 / 图像保存）<br/><br/>依赖: ray, vector3, rtweekend, color"]
 
-#### Task 0: Preparation
+    L1 --> L0
+    L2 --> L1
+    L2 --> L0
+    L3 --> L2
+    L3 --> L1
+    L4 --> L3
+    L5 --> L4
+    L5 --> L3
+    L6 --> L2
+    L6 --> L1
+```
 
-Just do some preparation work, including:
+> **阅读指南**：场景文件（`src/work/*.rs` / `src/book*/*.rs`）通常只直接依赖 `camera`、`color`、`material`、`bvh`、`hittable_list` 以及各几何体模块，无需理解全部底层实现即可创建新场景。
 
-- Read the **README** carefully, so that you know how to start your project
-- Correctly install Rust and Cargo
-- Figure out how to compile rust code, using `rustc` or `cargo`
-- Learning Rust language. Read a few chapters of the `Rust Programming Language` book
-    - The first 6 chapters are enough for you to start your project
-    - Chapter 10, 15, 16... the more, the better
-    - Maybe at first you just know how to write a `Hello World` program or how to output the first image in the book, as long as you can complete the current task, it is enough
+## 🔄 渲染新场景流程
 
-#### Task 1 (30 pts): *Ray Tracing In One Weekend*
+从编写一个场景文件到最终输出图像，完整的渲染管线如下：
 
-- Complete [the first book](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
-- Save each output image in the `output` folder
+```mermaid
+flowchart TD
+    A[场景文件<br/>src/work/xxx.rs] --> B["Camera::initialize()<br/>配置分辨率/采样数/景深等"]
+    B --> C[构建 World 场景]
 
-#### Task 2 (30 pts) : *Ray Tracing: The Next Week*
+    C --> D{"场景类型？"}
+    D -->|"大量三角形<br/>（.obj 模型）"| E["obj_loader::load_obj()<br/>→ Vec<Triangle>"]
+    D -->|"简单几何体"| F["直接创建<br/>Sphere / Quad / ConstantMedium 等"]
 
-- Complete [the second book](https://raytracing.github.io/books/RayTracingTheNextWeek.html)
-- Save each output image in the `output` folder
+    E --> G["HittableList::add()<br/>逐个加入物体"]
+    F --> G
 
-#### Task 3 (20 pts): Advanced features
-- We divide suggested advanced features for your ray tracer into four parts: [rendering](./doc/rendering-bonus.md), [geometry](./doc/geometry-bonus.md), [animation](./doc/animation-bonus.md), and [optimization](./doc/optimization-bonus.md).
-- The points given are just a reference. Final points will be given based on the workload as well as the quality of your work. (We use a question mark to indicate that the points are not fixed.)
-- Please contact TAs if you have any ideas about some other interesting features that you want to implement.
+    G --> H["BvhNode::from_list()<br/>构建 BVH 加速树"]
+    H --> I[World 就绪]
 
-#### Final scene (10 pts)
-- Finally, you will need to create some kind of beautiful image with your ray tracer. Beauty is of course in the eye of the beholder, but generally we are looking for clear effort in the generation of one special "capstone" image for this assignment, beyond just basic debugging/confirming that the technical features work. Great artworks will get you extra points.
-- For this part you may use whatever resources you like, such as free COLLADA files from places like TurboSquid (or any other free online resource); you may also find it helpful to use free software like Blender to assemble a scene. 
-- Your final scene can act as a banner or a logo of our project `Ray Tracing`. Look at the current banner at the top of this page, you can make a better one, with your own ray tracer.
-- Your final result should be a picture or video (if you implemented animation) in any format you like. Hand in the final result to TAs before the deadline.
-- You may contact TAs if you need calculation resources; but first try to optimize your code to run on your own computer.
-- You can refer to [artworks](./doc/artworks.md) from the previous years for some inspiration.
+    I --> J["render_parallel_gamma()<br/>按行并行渲染"]
 
-#### Presentation (10 pts)
-- There will be at most 2 students to do presentations. They will get extra points based on their presentations, no more than 10 points.
+    subgraph 并行渲染循环
+        J --> K["for j: 0..height<br/>(并行)"]
+        K --> L["for i: 0..width"]
+        L --> M["for sample: 0..spp"]
+        M --> N["cam.get_ray(i, j)<br/>随机采样 + 景深偏移"]
+        N --> O["ray_color(ray, depth, world)"]
+    end
 
-#### Code review (10 pts)
+    subgraph ray_color 递归追踪
+        O --> P{"world.hit()"}
+        P --> Q["BvhNode::hit()<br/>层次包围盒快速筛选"]
+        Q --> R{"具体几何体 hit()"}
+        R -->|"命中"| S["填充 HitRecord<br/>p / normal / u / v / mat"]
+        S --> T{"mat.scatter()"}
+        T -->|"漫反射/金属/玻璃等"| U["生成 scattered 光线<br/>+ attenuation 衰减"]
+        U --> V["ray_color(scattered,<br/>depth-1, world)"]
+        V --> P
+        T -->|"自发光<br/>DiffuseLight"| W["返回 emitted 颜色<br/>递归终止"]
+        R -->|"未命中"| X["返回 background 背景色"]
+    end
 
-### Requirements
-#### Task 1 & Task 2
-- Each book's generated images should be provided. Each image output commit should be tagged, if tagged, `run.yml` settings will run your code and generate the output images. You should **let us directly see the output images (a '.zip' file) in the `Github Actions` page**.
-- Your code committed should pass the checks in `Github Actions`, including (already included in `run.yml`):
-  - `cargo fmt -- --check`
-  - `cargo clippy --all-targets --all-features -- -D warnings`
-  - `cargo test --all-features`
-  - `cargo build --release --all-features`
-  - `cargo run --release`
-- You may run these commands locally to check your code before pushing it to GitHub.
-- **Do not modify any files under `.github/workflows/` without permission from the TAs.** In particular, you are not allowed to weaken or remove `-D warnings` from the clippy check, or change any other CI checks to make your code pass.
-#### Task 3
-- You should have a document recording all the bonus you have done briefly. For each bonus, you should show the code or a benchmark of your work.
+    V --> Y["累加像素颜色<br/>× pixel_samples_scale"]
+    W --> Y
+    X --> Y
+    Y --> Z["write_color_gamma()<br/>写入像素缓冲区"]
+    Z --> AA["save_image()<br/>输出 PNG"]
 
-### Timeline
-- **Note:** "Day" in the schedule below refers to working days (Monday to Friday). Day 1 is the Monday of the first week, and the deadline is the Thursday of the third week, 23:59.
-- Recommended schedule:
-  - **Day 1 - 2:**  Task 0: Environment setup & Learn Rust
-  - **Day 3 - 5:** Task 1
-  - **Day 6 - 8:** Task 2
-  - **Day 9 - 14:** Task 3 & Final Scene
-  - **Day 15:** Presentation & Code Review
-- **Deadline: 2026-07-23 23:59:59**
+    style A fill:#e1f5fe
+    style AA fill:#c8e6c9
+    style H fill:#fff9c4
+    style O fill:#ffccbc
+    style S fill:#ffccbc
+    style U fill:#ffccbc
+```
 
-### More Tips
-- You may run `cargo fmt` to format your code locally before pushing it to GitHub.
-- You may need to use `cargo run --release` to accelerate the precedure.
-- There is no restriction on unsafe code, if you think it is necessary, you can use it, and explain why you need it in code review.
+> **关键路径**：`Camera 生成光线 → BVH 加速求交 → 材质散射 → 递归追踪 → 累加采样 → 输出图像`
+
+## 🚀 快速开始
+
+### 环境要求
+
+- **Rust** 2024 edition（通过 [rustup](https://rust-lang.org/tools/install) 安装）
+- 项目使用 `rust-toolchain.toml` 固定工具链版本
+
+### 编译与运行
+
+```bash
+# 克隆项目
+git clone https://github.com/jbn-1or/Raytracer.git
+cd Raytracer
+
+# 以 Release 模式运行（强烈推荐，以获得最佳性能）
+cargo run --release
+```
+
+默认运行 `final_scene` 场景。要切换场景，修改 `src/main.rs` 中的调用：
+
+```rust
+fn main() {
+    work::final_scene::render();  // 切换为其他场景
+}
+```
+
+### 控制并行线程数
+
+```bash
+# 使用所有 CPU 核心（默认）
+cargo run --release
+
+# 限制为 4 个线程
+RAYON_NUM_THREADS=4 cargo run --release
+
+# 单线程（用于性能对比）
+RAYON_NUM_THREADS=1 cargo run --release
+```
+
+输出图像默认保存在 `output/` 目录下。
+
+## 🔧 依赖项
+
+| 依赖 | 版本 | 用途 |
+|------|------|------|
+| [image](https://crates.io/crates/image) | 0.25 | 图像输出与纹理加载 |
+| [rayon](https://crates.io/crates/rayon) | 1 | 多线程并行渲染 |
+| [tobj](https://crates.io/crates/tobj) | 4 | .obj 3D 模型加载 |
+| [indicatif](https://crates.io/crates/indicatif) | 0.17 | 进度条显示 |
+| [rand](https://crates.io/crates/rand) | 0.8 | 随机数生成 |
+| [console](https://crates.io/crates/console) | 0.15 | 终端控制 |
+
+## 🎯 Bonus 特性
+
+| 特性 | 说明 | 文档 |
+|------|------|------|
+| 多线程并行 | Rayon 按行并行，简单场景加速比可达 5x+ | [详细说明](doc/bonus/Multi-threading.md) |
+| 静态分发 | 泛型材质/变换消除虚调用开销 | [详细说明](doc/bonus/Static%20Dispatch.md) |
+| 模型加载 | .obj 文件支持，Möller-Trumbore 三角形求交 | [详细说明](doc/bonus/Support%20for%20Model%20Loadind.md) |
+| 环境光照 | 图像作为环境光源 | [详细说明](doc/bonus/environment_light.md) |
+| 黑色车漆 | GlassWithBlackCore 复合材料材质 | [详细说明](doc/bonus/glasswithlmbcore.md) |
+| 波纹水面 | Perlin 噪声驱动的水面反射 | [详细说明](doc/bonus/water_surface.md) |
+
+---
+
+*Inspired by [Ray Tracing In One Weekend](https://raytracing.github.io/) series.*

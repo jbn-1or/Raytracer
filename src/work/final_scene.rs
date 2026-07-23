@@ -239,9 +239,6 @@ pub fn render() {
 
     // ---- 跑车模型 ----
     // 原始尺寸：X[-3.81, 3.81], Y[-0.93, 2.67], Z[-6.96, 6.94]
-    // 缩放 0.13 → 约 1.0×0.47×1.8 单位
-    // 车轮底部缩放后 y ≈ -0.12，平移 y=-0.88 使底部接触水面 y=-1.0
-    // 放在 z=1.5 处，位于发光照片和相机之间
     println!("Loading car model...");
     let car_triangles = load_obj_ignore_normals(
         "assets/sportcar.obj",
