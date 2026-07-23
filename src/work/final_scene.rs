@@ -7,7 +7,7 @@ use crate::tools::camera::Camera;
 use crate::tools::color::Color;
 use crate::tools::hittable::{HitRecord, Hittable};
 use crate::tools::hittable_list::HittableList;
-use crate::tools::material::{DiffuseLight, GlassWithBlackCore, Lambertian, Material};
+use crate::tools::material::{DiffuseLight, GlassWithBlackCore, Lambertian, Material, WaterMetal};
 use crate::tools::quad::Quad;
 use crate::tools::ray::Ray;
 use crate::tools::render_utils::{
@@ -15,18 +15,19 @@ use crate::tools::render_utils::{
 };
 use crate::tools::rtweekend::INFINITY;
 use crate::tools::sphere::Sphere;
+use crate::tools::texture::ImageTexture;
 use crate::tools::triangle::Triangle;
-use crate::tools::vector3::{Point3, Vec3, unit_vector};
+use crate::tools::vector3::{Point3, Vec3};
 use image::{ImageBuffer, RgbImage};
 
-/// 图像宽度
-const IMAGE_WIDTH: u32 = 800;
+/// 图像宽度（16:9）
+const IMAGE_WIDTH: u32 = 5760;
 
 /// 每像素采样数
-const SAMPLES: u32 = 100;
+const SAMPLES: u32 = 800;
 
 /// 最大反弹次数
-const MAX_DEPTH: u32 = 10;
+const MAX_DEPTH: u32 = 20;
 
 /// 视野角度
 const VFOV: f64 = 30.0;
@@ -137,61 +138,117 @@ fn ray_color(r: &Ray, depth: u32, background: &Color, world: &dyn Hittable) -> C
     color_from_emission + color_from_scatter
 }
 
-/// 渐变背景（白到蓝）
-fn gradient_sky(r: &Ray) -> Color {
-    let unit = unit_vector(r.direction());
-    let a = 0.5 * (unit.y() + 1.0);
-    Color::new(1.0, 1.0, 1.0) * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
+/// 纯黑背景
+fn black_sky(_r: &Ray) -> Color {
+    Color::new(0.0, 0.0, 0.0)
 }
 
 // ======================== 场景构建 ========================
 
 pub fn render() {
-    let path = prepare_output_path("output/work/sportcar.png");
+    let path = prepare_output_path("output/work/final_scene.png");
 
     // ============ 材质 ============
 
-    // 黑色车漆（暗灰内核，微微有层次感）
-    let black_paint = Arc::new(GlassWithBlackCore::new_with_core(
-        2.5,
-        Color::new(0.04, 0.04, 0.4),
+    // 照片发光平面（NASA 全球夜光图）
+    let night_tex = Arc::new(ImageTexture::new("images/earth_night.jpg"));
+    let light_mat = Arc::new(DiffuseLight::new_with_texture(night_tex));
+
+    // 波纹水面
+    let water_surface = Arc::new(WaterMetal::new(
+        Color::new(1.0, 0.8, 0.8),
+        8.0,  // 波纹空间频率
+        0.15, // 波纹强度
     ));
 
-    // 地面材质
-    let ground_mat = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.55)));
+    // 光源
+    let light = Arc::new(DiffuseLight::new(Color::new(1.0, 1.0, 1.0)));
 
-    // 顶部矩形面光源
-    let light_mat = Arc::new(DiffuseLight::new(Color::new(3.0, 3.0, 3.0)));
+    // 星球
+    let planet_texture1 = Arc::new(ImageTexture::new("images/planet/2k_jupiter.jpg"));
+    let planet_mat1 = Arc::new(Lambertian::new_with_texture(planet_texture1));
+
+    let planet_texture2 = Arc::new(ImageTexture::new("images/planet/2k_mercury.jpg"));
+    let planet_mat2 = Arc::new(Lambertian::new_with_texture(planet_texture2));
+
+    // 海王星
+    let neptune_tex = Arc::new(ImageTexture::new("images/planet/2k_neptune.jpg"));
+    let neptune_mat = Arc::new(Lambertian::new_with_texture(neptune_tex));
+    // 黑色车漆（暗灰内核，高折射率增强反射）
+    let black_paint = Arc::new(GlassWithBlackCore::new_with_core(
+        1.2,
+        Color::new(0.8, 0.04, 0.04),
+    ));
 
     // ============ 世界 ============
     let mut world = HittableList::new();
 
-    // 大地面
-    world.add(Box::new(Sphere::new_with_material(
-        Point3::new(0.0, -1000.5, 0.0),
-        1000.0,
-        ground_mat,
-    )));
-
-    // 顶部面光源
+    // ---- 发光照片平面（正面朝向相机） ----
     world.add(Box::new(Quad::new(
-        Point3::new(-3.0, 6.0, -4.0),
-        Vec3::new(6.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 4.0),
+        Point3::new(-1.9, -1.6, 0.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
         light_mat,
     )));
 
-    // 加载跑车模型并用 BVH 加速
-    // 原始尺寸：X[-3.81, 3.81], Y[-0.93, 2.67], Z[-6.96, 6.94], 中心(0.02, 0.45, -1.03)
-    // 缩放 0.35 → 约 5 单位长，Y 方向约 0.8 单位高
-    // 绕 Y 旋转 15 度展示侧面，下移使车轮着地
+    // 波纹水面（大平面镜）
+    world.add(Box::new(Quad::new(
+        Point3::new(-10.0, -1.0, -10.0),
+        Vec3::new(20.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 20.0),
+        water_surface,
+    )));
+
+    // 海王星
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(-0.3, -0.97, 2.0),
+        0.03,
+        neptune_mat,
+    )));
+
+    // 星球
+    world.add(Box::new(Sphere::new_with_material(
+        Point3::new(1.0, -0.80, 1.0),
+        0.12,
+        planet_mat1,
+    )));
+
+    // 月球 - 带向左的运动模糊
+    world.add(Box::new(Sphere::new_move_with_material(
+        Point3::new(0.6, -0.95, 1.5),
+        Point3::new(0.35, -0.95, 1.5),
+        0.05,
+        planet_mat2,
+    )));
+
+    // 发光平面1
+    world.add(Box::new(Quad::new(
+        Point3::new(-10.0, 1.0, -10.0),
+        Vec3::new(20.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 20.0),
+        light.clone(),
+    )));
+
+    // 发光平面2
+    world.add(Box::new(Quad::new(
+        Point3::new(-10.0, -10.0, 5.0),
+        Vec3::new(20.0, 0.0, 0.0),
+        Vec3::new(0.0, 20.0, 0.0),
+        light,
+    )));
+
+    // ---- 跑车模型 ----
+    // 原始尺寸：X[-3.81, 3.81], Y[-0.93, 2.67], Z[-6.96, 6.94]
+    // 缩放 0.13 → 约 1.0×0.47×1.8 单位
+    // 车轮底部缩放后 y ≈ -0.12，平移 y=-0.88 使底部接触水面 y=-1.0
+    // 放在 z=1.5 处，位于发光照片和相机之间
     println!("Loading car model...");
     let car_triangles = load_obj_ignore_normals(
         "assets/sportcar.obj",
         black_paint,
-        0.15,
-        Vec3::new(0.0, -0.45 * 0.35, -2.0),
-        -35.0,
+        0.065,
+        Vec3::new(0.0, -0.945, 1.0),
+        -55.0,
     );
     println!("Loaded {} triangles, building BVH...", car_triangles.len());
 
@@ -213,9 +270,9 @@ pub fn render() {
 
     cam.vfov = VFOV;
 
-    // 从前方略高处看向车身
-    cam.lookfrom = Point3::new(3.0, 1.5, 5.0);
-    cam.lookat = Point3::new(0.0, -0.2, -2.0);
+    // 相机正对照片平面中心（保持 earth_night 原有设置）
+    cam.lookfrom = Point3::new(-0.1, -0.85, 3.2);
+    cam.lookat = Point3::new(-0.1, -0.65, 0.0);
     cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.0;
@@ -240,7 +297,7 @@ pub fn render() {
             let mut pixel_color: Color = Color::zero();
             for _sample in 0..samples {
                 let r = cam.get_ray(i, j);
-                let bg = gradient_sky(&r);
+                let bg = black_sky(&r);
                 pixel_color += ray_color(&r, max_depth, &bg, &world);
             }
             pixel_color * pixel_samples_scale
