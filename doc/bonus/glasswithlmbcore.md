@@ -73,25 +73,3 @@ let black_paint_soft = Arc::new(GlassWithBlackCore::new_with_core(
     Color::new(0.05, 0.05, 0.05),
 ));
 ```
-
-## 与双层球体方案 (Dielecric + Lambertian) 的对比
-
-| 特性 | 双层球体方案 | `GlassWithBlackCore` |
-|------|-------------|---------------------|
-| 实现方式 | 两个同心球体（外玻璃 + 内朗伯） | 单一材质切换内外行为 |
-| 额外几何体 | 需要内层球体与玻璃紧密嵌套 | 无额外几何体 |
-| 内核击中点 | 内层球体表面（法线向内） | 玻璃内表面（法线仍向外） |
-| 散射方向 | Lambertian 按内球法线散射 | Lambertian 按玻璃内表面法线散射 |
-| 配置复杂度 | 多个球体协调位置/半径 | 单一材质，即插即用 |
-
-## 应用场景
-
-`src/work/black_car_paint.rs` 中已应用此材质：
-- 四个对比球体：纯黑车漆、暗灰车漆、灰色朗伯体、金属铬球
-- 顶部面光源 + 渐变背景
-- 纯黑和暗灰车漆球均呈现深邃黑色加镜面高光
-
-## 文件位置
-
-- 材质定义：`src/tools/material.rs` → `GlassWithBlackCore`
-- 场景应用：`src/work/black_car_paint.rs`
